@@ -24,6 +24,11 @@ That is the same level as the best published systems (R5, NCRL, EpiGNN), not bet
 within their own run-to-run spread of 100%, and they were measured on CLUTRR's original data
 release, while these runs use the HuggingFace release of the same splits.
 
+![Top-1 accuracy by chain length on CLUTRR, trained on chains of 2 and 3 steps. This model stays at 99.4–100% from 4 to 10 steps; R5 and CTP stay between 89% and 99%; LSTM, attention and graph networks decay to between 39% and 75%.](docs/figures/extrapolation.png)
+
+*Top-1 accuracy on chains longer than any seen in training. Trained networks decay as chains
+grow; a derived law has nothing to decay. Baselines from R5 (Lu et al., 2022), Table 2.*
+
 ## Two writeups
 
 - [*Who Is Your Daughter's Grandfather?*](https://stevesolvesproblems.github.io/bicyclic-kinship/clutrr-explained.html)
