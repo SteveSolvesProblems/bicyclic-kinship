@@ -1,5 +1,7 @@
 # bicyclic-kinship
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23071497.svg)](https://doi.org/10.5281/zenodo.23071497)
+
 A sound, set-valued model of relational composition, derived from opaque symbols.
 Zero dependencies, pure Python: 3,146 lines of source, about 2,000 of them code (not counting
 comments and docstrings).
@@ -178,7 +180,9 @@ fail if domain knowledge ever leaks into the source.
 
 ## Citing
 
-GitHub's "Cite this repository" button reads `CITATION.cff`.
+Archived on Zenodo: [doi:10.5281/zenodo.23071497](https://doi.org/10.5281/zenodo.23071497) (all versions;
+v0.1.0 is [10.5281/zenodo.23071498](https://doi.org/10.5281/zenodo.23071498)). GitHub's "Cite this repository"
+button reads `CITATION.cff`.
 
 This work is not on arXiv. I'm open to submitting it: arXiv asks first-time authors for an
 endorsement from an established author in the category (cs.AI or cs.LG here). If you can

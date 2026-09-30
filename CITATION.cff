@@ -12,6 +12,14 @@ authors:
   - given-names: Steve
     family-names: Ball
 version: 0.1.0
+doi: 10.5281/zenodo.23071497
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23071497
+    description: "Concept DOI: all versions, resolving to the latest"
+  - type: doi
+    value: 10.5281/zenodo.23071498
+    description: "Version 0.1.0"
 date-released: "2026-09-30"
 license: MIT
 repository-code: "https://github.com/SteveSolvesProblems/bicyclic-kinship"
