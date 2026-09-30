@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Deriving Composition Laws</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column (~68ch) with a contents strip; tables and code scroll inside their own boxes. */
+:root {
+  --paper: #f6f7f4;
+  --ink: #1c2330;
+  --muted: #5b6474;
+  --rule: #d9ddd6;
+  --accent: #1f6a86;
+  --accent-soft: #e2eef2;
+  --panel: #ffffff;
+  --good: #2f7d4f;
+  --warn: #9a6a12;
+  --bad: #b23a3a;
+  --display: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --body: "Literata", Georgia, "Times New Roman", serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14181e; --ink: #e4e7ea; --muted: #9aa3ae; --rule: #2c333d;
+    --accent: #7cc0da; --accent-soft: #1b2a33; --panel: #1a1f26; --good: #7fcf9d; --warn: #e2b55c; --bad: #f08a8a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14181e; --ink: #e4e7ea; --muted: #9aa3ae; --rule: #2c333d;
+  --accent: #7cc0da; --accent-soft: #1b2a33; --panel: #1a1f26; --good: #7fcf9d; --warn: #e2b55c; --bad: #f08a8a; color-scheme: dark;
+}
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.65; }
+.wrap { max-width: 44rem; margin: 0 auto; padding-inline: 20px; padding-block: 48px 80px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 700; margin: 0 0 .5rem; letter-spacing: -.01em; }
+.dek { color: var(--muted); font-style: italic; margin: 0 0 2rem; }
+h2 { font-size: 1.45rem; font-weight: 600; margin: 3.2rem 0 .9rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); scroll-margin-top: 1rem; }
+p, ul, ol { margin: 0 0 1rem; }
+ul, ol { padding-left: 1.3rem; }
+li { margin-bottom: .55rem; }
+strong { font-weight: 600; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+code { font-family: var(--mono); font-size: .84em; background: var(--accent-soft); padding: .08em .35em; border-radius: 3px; }
+.eyebrow { font-family: var(--display); font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 .6rem; }
+
+nav.toc { font-family: var(--display); font-size: .9rem; border: 1px solid var(--rule); background: var(--panel); border-radius: 6px; padding: 14px 18px; margin: 0 0 1rem; }
+nav.toc p { margin: 0 0 .4rem; font-weight: 600; color: var(--muted); font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; }
+nav.toc ol { margin: 0; padding-left: 1.2rem; columns: 2 16rem; column-gap: 2rem; }
+nav.toc li { margin: 0 0 .25rem; break-inside: avoid; }
+nav.toc a { text-decoration: none; }
+nav.toc a:hover { text-decoration: underline; }
+
+.limits { border-left: 3px solid var(--accent); padding: 2px 0 2px 18px; margin: 1.2rem 0 1.5rem; }
+
+.table { overflow-x: auto; margin: 1.1rem 0 1.4rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-family: var(--display); font-size: .88rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; }
+tr.ours td { background: var(--accent-soft); font-weight: 600; }
+.cap { font-family: var(--display); font-size: .82rem; color: var(--muted); margin: 1.4rem 0 -.6rem; }
+
+.steps { display: flex; flex-wrap: wrap; gap: 8px; margin: .8rem 0 1.2rem; padding: 0; list-style: none; }
+.steps li { margin: 0; font-family: var(--display); font-size: .86rem; border: 1px solid var(--rule); background: var(--panel); border-radius: 999px; padding: 4px 12px; display: flex; gap: 8px; align-items: baseline; }
+.steps .arrows { font-family: var(--mono); color: var(--accent); letter-spacing: .05em; }
+.steps .xy { font-family: var(--mono); color: var(--muted); font-size: .8rem; }
+
+pre { font-family: var(--mono); font-size: .82rem; line-height: 1.55; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 1rem 0 1.4rem; }
+pre code { background: none; padding: 0; font-size: 1em; }
+.cm { color: var(--muted); }
+
+.hero h1 { font-size: clamp(2.1rem, 6vw, 3.1rem); margin-bottom: .9rem; }
+.lead { font-size: 1.2rem; line-height: 1.55; margin: 0 0 .8rem; }
+.sub { color: var(--muted); font-family: var(--display); font-size: .95rem; margin: 0 0 1.6rem; }
+.disclosure { font-size: .92rem; line-height: 1.55; background: var(--accent-soft); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px; margin: 0 0 1.4rem; }
+.disclosure p { margin: 0; }
+
+.qa { list-style: none; padding: 0; margin: 1.1rem 0 1.4rem; display: grid; gap: 10px; }
+.qa li { margin: 0; border: 1px solid var(--rule); background: var(--panel); border-radius: 6px; padding: 12px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 18px; align-items: start; }
+.qa .q { font-weight: 600; min-width: 0; }
+.qa .chain { grid-column: 1; font-family: var(--mono); font-size: .76rem; color: var(--muted); overflow-wrap: anywhere; min-width: 0; }
+.qa .a { grid-column: 2; grid-row: 1 / 3; text-align: right; font-family: var(--display); font-size: .95rem; }
+.qa .a b { font-weight: 600; display: block; }
+.qa .note { grid-column: 1 / -1; font-size: .92rem; color: var(--muted); margin-top: 4px; }
+.tag { display: inline-block; font-family: var(--display); font-size: .68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 999px; padding: 1px 8px; margin-top: 4px; }
+.tag.one { color: var(--good); } .tag.two { color: var(--warn); } .tag.none { color: var(--muted); } .tag.miss { color: var(--bad); }
+@media (max-width: 520px) {
+  .qa li { grid-template-columns: 1fr; }
+  .qa .a { grid-column: 1; grid-row: auto; text-align: left; }
+}
+
+
+figure.fig { margin: 1.6rem 0 1.8rem; }
+figure.fig .frame { overflow-x: auto; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); padding: 14px 12px 8px; }
+figure.fig svg { display: block; width: 100%; height: auto; max-width: 100%; font-family: var(--display); }
+figure.fig.wide svg { min-width: 520px; }
+figure.fig figcaption { font-family: var(--display); font-size: .84rem; line-height: 1.5; color: var(--muted); margin-top: .6rem; }
+figure.fig figcaption strong { color: var(--ink); font-weight: 600; }
+.sv-ink { fill: var(--ink); } .sv-muted { fill: var(--muted); } .sv-accent { fill: var(--accent); } .sv-warn { fill: var(--warn); }
+.sv-node { fill: var(--paper); stroke: var(--rule); stroke-width: 1.2; }
+.sv-grid { stroke: var(--rule); stroke-width: 1; }
+.sv-a { stroke: var(--accent); } .sv-w { stroke: var(--warn); } .sv-m { stroke: var(--muted); }
+.sv-seen { fill: var(--accent); } .sv-one { fill: var(--accent); fill-opacity: .38; } .sv-two { fill: var(--warn); } .sv-none { fill: none; stroke: var(--rule); }
+.sv-cell { fill: var(--paper); stroke: var(--rule); } .sv-cell-hl { fill: var(--accent-soft); stroke: var(--accent); }
+.sv-pt:hover { stroke: var(--ink); stroke-width: 2; }
+
+h3 { font-size: 1.12rem; font-weight: 600; margin: 2rem 0 .6rem; }
+.byline { font-family: var(--display); font-size: .95rem; color: var(--muted); margin: 0 0 1.1rem; }
+.byline strong { color: var(--ink); font-weight: 600; }
+.question { font-family: var(--display); font-size: clamp(1.35rem, 3.6vw, 1.7rem); font-weight: 600; line-height: 1.25; margin: 0 0 .5rem; text-wrap: balance; }
+.record { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 10px 18px; margin: .8rem 0 .4rem; }
+.record div { min-width: 0; }
+.record b { display: block; font-family: var(--display); font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); line-height: 1.2; }
+.record span { font-family: var(--display); font-size: .8rem; color: var(--muted); line-height: 1.35; display: block; }
+.disclosure details { margin-top: .5rem; }
+.disclosure summary { cursor: pointer; font-family: var(--display); font-size: .86rem; color: var(--accent); }
+.disclosure ol { margin: .5rem 0 0; font-size: .9rem; }
+.disclosure li { margin-bottom: .3rem; }
+
+.refs { font-size: .9rem; color: var(--muted); border-top: 1px solid var(--rule); margin-top: 3rem; padding-top: 1.2rem; }
+.refs p { margin: 0 0 .4rem; }
+@media (max-width: 480px) { body { font-size: 16px; } .wrap { padding-block: 32px 64px; } }
+/* Companion additions: propositions, a process timeline, wrapped table cells. */
+.thm { background: var(--panel); border: 1px solid var(--rule); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 10px 16px; margin: 1rem 0 1.2rem; }
+.thm.cone { border-left-color: var(--warn); }
+.thm .lab { display: block; font-family: var(--display); font-size: .74rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin-bottom: .3rem; }
+.thm.cone .lab { color: var(--warn); }
+.thm p { margin: 0 0 .5rem; } .thm p:last-child { margin-bottom: 0; }
+.thm .proof { color: var(--muted); font-size: .94rem; }
+.thm .proof::before { content: "Proof. "; font-style: italic; }
+table.wrap-cells th, table.wrap-cells td { white-space: normal; min-width: 8rem; vertical-align: top; }
+table.wrap-cells td:first-child { min-width: 1.5rem; }
+ol.steps-v { padding-left: 1.4rem; } ol.steps-v li { margin-bottom: .8rem; }
+.timeline { list-style: none; padding: 0; margin: 1.2rem 0 1.4rem 7px; border-left: 2px solid var(--rule); }
+.timeline .phase { font-family: var(--display); font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 1.1rem 0 .5rem 1.1rem; }
+.timeline .phase:first-child { margin-top: 0; }
+.timeline .ev { position: relative; margin: 0 0 .75rem 1.1rem; padding: 10px 14px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; }
+.timeline .ev::before { content: ""; position: absolute; left: calc(-1.1rem - 6px); top: 16px; width: 10px; height: 10px; border-radius: 50%; background: var(--paper); border: 2px solid var(--muted); }
+.timeline .ev.kept::before { border-color: var(--accent); background: var(--accent); }
+.timeline .ev b { font-family: var(--display); font-weight: 600; }
+.timeline .ev p { margin: .25rem 0 0; font-size: .93rem; color: var(--muted); }
+.timeline .ev .tag { margin: 0 0 0 .5rem; vertical-align: 1px; }
+.tag.kept { color: var(--accent); } .tag.gone { color: var(--bad); } .tag.moved { color: var(--warn); }
+td .tag { border-radius: 4px; line-height: 1.4; padding: 3px 8px; margin-top: 0; }
+.sv-mfill { fill: var(--muted); } .sv-wfill { fill: var(--warn); } .sv-afill { fill: var(--accent); }
+</style>
+
+<main class="wrap">
+  <header class="hero">
+    <p class="eyebrow">Technical companion · bicyclic-kinship</p>
+    <h1>Deriving Composition Laws, and Trying to Break Them</h1>
+    <p class="byline">By <strong>Steve Ball</strong> · September 2026</p>
+    <p class="lead">A model that derives its own rules is only as good as the effort spent trying to prove those rules wrong. This is the record of that effort.</p>
+    <p class="sub">The technical companion to <a href="clutrr-explained.html"><em>Who Is Your Daughter's Grandfather?</em></a>, which explains the model in plain language. This page gives the mathematics, the measurements, and the process behind them: what was tried and dropped, how the model was stress-tested, which assumptions were audited, which claims were corrected, and how the published literature was used to place the work.</p>
+  </header>
+
+  <aside class="disclosure" aria-label="How this was built">
+    <p><strong>How this was built.</strong> Built with Claude Code, using Claude Opus models. The research direction and the claims are the author's. The explainer carries the full development record: commits, tests, revisions and corrections.</p>
+  </aside>
+
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#why">Why this work exists</a></li>
+      <li><a href="#ledger">The claims, and where each is checked</a></li>
+      <li><a href="#model">The model, stated precisely</a></li>
+      <li><a href="#families">Four families, each solved exactly</a></li>
+      <li><a href="#algorithms">Algorithms</a></li>
+      <li><a href="#path">How the approach was chosen</a></li>
+      <li><a href="#guard">Guarding against my own knowledge</a></li>
+      <li><a href="#discipline">How measurements are made</a></li>
+      <li><a href="#results">Results on CLUTRR</a></li>
+      <li><a href="#ablation">What each part is worth</a></li>
+      <li><a href="#break">Trying to break it</a></li>
+      <li><a href="#inlaw">A worked investigation: the in-law gap</a></li>
+      <li><a href="#context">Placing the work</a></li>
+      <li><a href="#novelty">What is new, and what isn't</a></li>
+      <li><a href="#corrections">Corrections, and what caught each</a></li>
+      <li><a href="#threats">Threats to validity</a></li>
+      <li><a href="#next">What would test it further</a></li>
+      <li><a href="#repro">Reproducing everything</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="why">Why this work exists</h2>
+  <p>A system that reasons over relations (chaining <em>A is B's mother</em> and <em>B is C's brother</em> into a new fact) needs rules for how relations combine. There are three ways to get them.</p>
+  <ul>
+    <li><strong>Write them by hand.</strong> Logic programs do this, and they are exact: a system that is given the family rules as a logic program handles CLUTRR's text setting well, and doesn't bother with its extrapolation task, because hand-written rules extrapolate by construction (<a href="https://arxiv.org/abs/2307.07696">Yang, Ishay &amp; Lee, 2023</a>). Anthropology did the same for kinship forty years ago (<a href="https://doi.org/10.1086/203160">Read, 1984</a>). The cost is that someone who already knows the domain has to supply the knowledge, and the system can't tell you when that knowledge is wrong.</li>
+    <li><strong>Learn them statistically.</strong> Neural and neuro-symbolic systems (R5, NCRL, EpiGNN) learn rules from examples with no domain knowledge. The cost is that nothing states in advance what they will do on an input unlike their training data, their errors are found one input at a time, and their answers come with a confidence score rather than a guarantee.</li>
+    <li><strong>Derive them.</strong> Treat the observed facts as constraints and solve exactly for every rule of a given shape that fits them. If this works, it would combine the strengths of the other two: no domain knowledge, like learning, and rules that are exact, readable and checkable, like writing them by hand.</li>
+  </ul>
+  <p>This project tests the third route, and it exists because the third route gives something the other two don't: answers that can be <em>audited on inputs nobody has seen</em>. A derived rule is a claim about every chain, including ones never observed, so it can be read, tested against new data, and falsified by a single counterexample. The explanation of an answer is the computation that produced it, not a story told afterwards. And when the rules don't settle a question, the model returns every answer they allow, instead of picking one and sounding sure.</p>
+  <p>CLUTRR (<a href="https://arxiv.org/abs/1908.06177">Sinha et al., 2019</a>) is the right first test for three reasons. It was built to separate systems that learn rules from systems that fit the training distribution, by testing on longer chains than any in training. Its answers are checkable, with no room for a plausible-sounding story. And it comes with two kinds of ground truth: published results from the best learned systems, and an algebra that anthropologists built by hand, which a derivation should recover if it has found something real.</p>
+  <p>The thesis the evidence here supports is narrow: <strong>on a problem that has a composition law, the law can be derived rather than learned or written, and the derived model reaches the level of the best trained systems while reporting what it does not know.</strong> What it does not settle is how many problems have such a law. That is an empirical question, and the method is cheap enough to ask it one domain at a time. This page is the evidence for the narrow claim, and the record of how it was checked.</p>
+
+  <h2 id="ledger">The claims, and where each is checked</h2>
+  <p>Every claim this work makes is listed here, with the measurement behind it and the command or test that reproduces it. Everything else on the page is support for one of these rows, or an attempt to break one.</p>
+  <div class="table"><table class="wrap-cells">
+    <thead><tr><th>Claim</th><th>Evidence</th><th>Reproduced by</th></tr></thead>
+    <tbody>
+      <tr><td>The answer set contains the true answer on every held-out CLUTRR story</td><td>100% sound on 2,929 stories across five datasets, and on the sixth</td><td><code>benchmark</code>; <code>test_clutrr_soundness_is_total_on_every_instance</code></td></tr>
+      <tr><td>It reaches the level of the best published systems on chains longer than any in training</td><td>99.80% top-1 at lengths 4–10; 99.39% at 5–10 on the second split</td><td><code>benchmark</code>; <a href="#results">results</a></td></tr>
+      <tr><td>It sits at the ceiling any chain-only method can reach</td><td>Exactly at it on four of six datasets; 0.17% and 1.4% below on the other two</td><td><code>benchmark</code>; <code>test_clutrr_sits_at_the_ceiling</code></td></tr>
+      <tr><td>No domain knowledge is in the code</td><td>The same code runs on six synthetic algebras, deriving the right laws or, where none exist, none</td><td>the first half of <code>tests/</code></td></tr>
+      <tr><td>It recovers the kinship algebra anthropology built by hand</td><td>The derived coordinates are Read's (1984) ascent and descent</td><td><code>test_clutrr_the_cone_coordinates_are_the_anthropological_ones</code></td></tr>
+      <tr><td>Chain length does not degrade it</td><td>100% at 1,000 steps; exact addresses at 10,000</td><td><code>worlds</code>; three depth tests</td></tr>
+      <tr><td>False input facts are flagged, not answered wrongly</td><td>0.0% silently wrong with up to ten false facts per story</td><td><code>noise</code>; two noise tests</td></tr>
+    </tbody>
+  </table></div>
+  <p>Two things are deliberately not claimed. The rules are <em>audited</em> against the data, not proved true of the world (<a href="#break">section 11</a> shows exactly where that difference bites). And the model composes relation symbols; it does not read text.</p>
+  <p>The four commands are <code>python -m bicyclic_kinship.benchmark</code>, <code>.noise</code>, <code>.worlds</code> and <code>.stress</code>. Nothing is averaged over runs, because nothing is random: the derivation is deterministic, and every seeded experiment fixes its seeds.</p>
+
+  <h2 id="model">The model, stated precisely</h2>
+  <p>Let <code>Σ</code> be a finite set of opaque symbols (relation words, with no meaning attached) and let composition be a partial operation on them. The evidence is a set of <strong>triples</strong> <code>T ⊆ Σ × Σ × Σ</code>, where <code>(a, b, c) ∈ T</code> asserts <code>a ∘ b = c</code>. The task: given a chain <code>w = r₁r₂…r_k</code>, name the composite <code>r₁ ∘ … ∘ r_k</code>. On CLUTRR, <code>|Σ| = 20</code> and <code>|T| = 62</code> of a possible 400, read off 9,074 training chains of length two and three.</p>
+  <p>Two facts shape everything that follows. Composition is <em>partial</em>: most pairs are never observed, and some composites have no name in <code>Σ</code>. And the answer is not always a function of the chain, because two chains of the same words can denote different people. Any method that returns one name is therefore sometimes wrong by construction.</p>
+  <p>The usual approach is to choose a representation (a vector space, a network) and fit its parameters until <code>T</code> is reproduced. This model takes the other approach: <strong>fix a small menu of law shapes, and return every law of each shape that is consistent with every observation.</strong> The model is that solution set. There is nothing to initialise and nothing to tune. The only design decision is the menu, which is stated rather than hidden.</p>
+
+  <div class="thm"><span class="lab">Definition 1 — a law</span>
+    <p>A <strong>law</strong> is a map <code>φ : Σ → V</code> into a set with an associative operation <code>⊙</code>, such that <code>φ(a) ⊙ φ(b) = φ(c)</code> for every <code>(a, b, c) ∈ T</code>. It is <strong>valid</strong> if the identity holds for every true product, not just the observed ones.</p></div>
+  <p>Associativity is what makes a law usable on a chain. The fold <code>φ̂(w) = φ(r₁) ⊙ … ⊙ φ(r_k)</code> doesn't depend on bracketing, so a law derived from pairs applies at every length with no extension. That is the whole mechanism behind length extrapolation. There is no separate story for it.</p>
+  <div class="thm"><span class="lab">Definition 2 — address and admitted set</span>
+    <p>Given laws <code>φ₁ … φ_m</code>, the <strong>address</strong> of a chain is <code>α(w) = (φ̂₁(w), …, φ̂_m(w))</code>, and the <strong>admitted set</strong> is <code>A(w) = { s ∈ Σ : φᵢ(s) = φ̂ᵢ(w) for all i }</code>.</p></div>
+  <div class="thm"><span class="lab">Proposition 1 — soundness</span>
+    <p>If every law is valid and composition is single-valued, the true composite of <code>w</code>, when it has a name, is in <code>A(w)</code>.</p>
+    <p class="proof">By induction on length. If the prefix <code>r₁…r_{k−1}</code> has true composite <code>c′</code> with <code>φ̂ = φ(c′)</code>, validity applied to the true product <code>c′ ∘ r_k = c*</code> gives <code>φ(c′) ⊙ φ(r_k) = φ(c*)</code>, and the left side is <code>φ̂(w)</code>.</p></div>
+  <p>The proposition carries two preconditions, and both are treated as things to check rather than assume. <em>Validity</em> is a property of the world, which can only be audited against the data in hand (<a href="#audit">section 5</a>). <em>Single-valuedness</em> matters because where a pair has two true composites, the induction step has nothing to apply validity to. It is checked: <code>table_conflicts</code> reports zero conflicting products on all five CLUTRR instances. <a href="#audit-margin">Section 11</a> measures what happens in a world where it fails.</p>
+  <div class="thm"><span class="lab">Proposition 2 — monotonicity</span>
+    <p>Removing a law can only widen <code>A(w)</code>, since the set is defined by a conjunction of equality tests. Every subset of a sound derivation is sound, so an ablation can cost precision and never soundness.</p></div>
+  <div class="thm"><span class="lab">Definition 3 and Proposition 3 — preference</span>
+    <p>A <strong>preference</strong> is any map with <code>π(A, w) ⊆ A</code>. However preferences are composed or ordered, the result is a subset of <code>A(w)</code>, so a preference can cost precision and never soundness.</p></div>
+  <p>This is why the model reports two things. <code>solve(w)</code> returns <code>A(w)</code>, what the laws admit. <code>best(w)</code> applies preferences and returns one name, labelled as a preference. Keeping them apart was itself a finding: the only genuine errors this project ever had came from merging them, reading a single observed product such as <code>(daughter, grandmother) = mother</code> as a function when longer chains show the same address answering <code>mother-in-law</code> too.</p>
+
+  <h2 id="families">Four families, each solved exactly</h2>
+  <p>Each family is a constraint system with a closed-form or exhaustive solution: the derivation returns every member, or reports that there are none. That property is what separates this from searching for structure. An earlier search for symmetries of the same 62 products returned fifty, none of them the one wanted, because a partial table admits any number of accidental symmetries in its weakly constrained corners.</p>
+
+  <h3>The additive family: a null space</h3>
+  <p>Take <code>V = ℚ</code> with <code>+</code>. Build an integer matrix <code>M</code> with one row per triple (<code>+1</code> for <code>a</code>, <code>+1</code> for <code>b</code>, <code>−1</code> for <code>c</code>). The additive laws are exactly <code>ker M</code>, computed by exact rational elimination. Its dimension, <code>|Σ| − rank M</code>, is a property of the data, not a setting. It comes out as 1 for kinship (generation: parents +1, children −1), 1 for filesystem paths, 2 for a grid, and 0 for an algebra with no additive structure.</p>
+  <p>A law that wraps is the sharpest boundary here. <code>ℤ/5</code> is purely additive, but its rational kernel is zero, because a rational null space sees only torsion-free invariants. The model abstains there and stays sound, and a test pins that behaviour.</p>
+
+  <h3>The cone: the bicyclic monoid</h3>
+  <p>Kinship composition <em>cancels</em>: a mother's son is a brother, not a "mother-son". The first question was whether any invertible representation (phases, rotations, permutations, invertible matrices) could express that. None can:</p>
+  <div class="thm"><span class="lab">Proposition 4 — no group representation</span>
+    <p>If an algebra has <code>x ∘ x = x</code> and some <code>y ∘ x ≠ y</code>, it has no injective homomorphism into a group.</p>
+    <p class="proof">In a group <code>x² = x</code> forces <code>x = e</code>, so <code>y ∘ x = y</code> for every <code>y</code>.</p></div>
+  <p>Both premises are measured in the corpus: <code>brother ∘ brother = brother</code> (67 occurrences, no exceptions) and <code>father ∘ brother = uncle</code> (66, none). Since <code>x ∘ x = x</code> is transitivity, the argument rules out invertible representations for any relational algebra with a transitive relation in it. The knowledge-graph literature had already reached this conclusion (<a href="#context">section 13</a>), and this page claims only the check against observed products.</p>
+  <div class="thm cone"><span class="lab">Definition 4 — the cone</span>
+    <p><code>V = ℕ²</code>, with <code>(u₁, d₁) ⊙ (u₂, d₂) = (u₁ + (u₂ − d₁)⁺, d₂ + (d₁ − u₂)⁺)</code>. A symbol carries how far a path rises and how far it falls. Composition translates, and folds back onto the boundary of the quadrant.</p></div>
+  <div class="thm cone"><span class="lab">Proposition 5 — this is the bicyclic monoid</span>
+    <p>Map <code>(u, d) ↦ pᵘqᵈ</code> into <code>B = ⟨p, q | qp = 1⟩</code>. Every element has the normal form <code>pᵘqᵈ</code>, and <code>qᵈpᵘ = p^{(u−d)⁺} q^{(d−u)⁺}</code> gives exactly <code>⊙</code>. So <code>⊙</code> is associative, with identity <code>(0, 0)</code>. <code>B</code> embeds in no group: <code>qp = 1</code> would make <code>pq = 1</code>, but <code>pq</code> is in normal form and is not <code>1</code>.</p></div>
+  <div class="thm cone"><span class="lab">Proposition 6 — the linear shadow</span>
+    <p><code>δ(u, d) = d − u</code> is a homomorphism onto <code>(ℤ, +)</code>. So every cone law's shadow is an additive law, and lies in the kernel already computed.</p></div>
+  <p>Proposition 6 makes the search finite: rather than search <code>ℕ^{2|Σ|}</code>, the derivation enumerates small integer members of <code>ker M</code> and solves for <code>u</code> alone. It also explains a puzzle from early in the project. Generation, the first law found, was the visible one-dimensional shadow of a two-dimensional structure. That is why it existed, and why it was not enough.</p>
+  <div class="thm cone"><span class="lab">Proposition 7 — gauge</span>
+    <p>Translating every symbol by <code>(k, k)</code> commutes with <code>⊙</code>, so assignments are reported up to that translation, pushed down until some symbol touches the boundary.</p></div>
+  <p>On CLUTRR the derivation returns four assignments up to gauge. One is the anthropological one (father at <code>(1, 0)</code>). On every depth walk measured, the other three place the endpoint at the anthropological address shifted by exactly <code>(1, 1)</code>. They disagree only about whether a chain can cancel all the way back to the identity, which no CLUTRR product settles. All four are kept, and a name is admitted only where all four agree.</p>
+
+  <h3>Classes: the last step decides, or the first</h3>
+  <p>Take <code>V = Σ/∼</code> with right projection, <code>(x, y) ↦ y</code>. The law <code>cls(a ∘ b) = cls(b)</code> says some property is carried by the last step alone. Gender is the obvious example: whoever a chain passes through, <code>… ∘ mother</code> names a woman.</p>
+  <div class="thm"><span class="lab">Proposition 8 — the finest valid partition</span>
+    <p>Let <code>∼</code> be generated by <code>c ∼ b</code> for each <code>(a, b, c) ∈ T</code>, closed by union-find. Then <code>∼</code> satisfies the law, and every partition that satisfies it is a coarsening of <code>∼</code>.</p></div>
+  <p>On CLUTRR the partition has six blocks: <code>{husband, son-in-law}</code>, <code>{wife, daughter-in-law}</code>, <code>{father, father-in-law, grandfather}</code>, <code>{mother, mother-in-law, grandmother}</code>, <code>{brother, son, grandson, nephew, uncle}</code> and <code>{sister, daughter, granddaughter, niece, aunt}</code>. A hand-written male/female split is its two-block coarsening, so the derived law is strictly stronger than the domain knowledge it replaces. The fourth family is the mirror image, left projection (the first step decides). CLUTRR supports no such law and the derivation drops it. On a real family tree it finds one with two blocks (<a href="#tree">section 11</a>), which is the evidence that the family earns its place on the menu.</p>
+
+  <h2 id="algorithms">Algorithms</h2>
+  <h3>Sparse incremental elimination</h3>
+  <p>A row built from a triple has at most three non-zero entries however large <code>Σ</code> is, and there are far more rows than the rank can ever be. Dense elimination spends nearly all its time on zeros, so rows are reduced as they arrive and discarded when they collapse:</p>
+  <pre><code>pivots : column → fully reduced sparse row
+for each row r:
+    while r touches any pivot column c:        <span class="cm"># every one, not only the leading one</span>
+        r ← r − r[c] · pivots[c]
+    if r = 0: continue                         <span class="cm"># most rows end here</span>
+    c ← min(support(r));  r ← r / r[c]
+    for each pivot row p with p[c] ≠ 0:        <span class="cm"># keep the basis reduced</span>
+        p ← p − p[c] · r
+    pivots[c] ← r</code></pre>
+  <p>The arithmetic is exact <code>Fraction</code> throughout, so this is the same reduced echelon form, not an approximation of it. The first version eliminated only a row's <em>leading</em> pivot. It was fast and quietly wrong, and dropped CLUTRR top-1 from 99.4% to 26.1%. The dense implementation is kept in the source for exactly that reason, and a test holds the two to exact equality on six worlds. A fast path needs something that can disagree with it.</p>
+
+  <h3>Cone search, and how deep to look</h3>
+  <p>For each candidate shadow <code>δ ∈ ker M</code>, assign <code>u</code> symbol by symbol, most-constrained first. Assigning two operands forces their product, so the search is mostly propagation and backtracking stays shallow. Within its depth bound the search is exhaustive, so the result is the complete solution set up to gauge.</p>
+  <p>The bound is read from the data, not fixed, and deciding that was a correction. An early write-up said the evidence left "a family of four" assignments. It doesn't: four was a truncation constant in the search. Search deeper and CLUTRR admits one assignment at depth 2, four at 3, ten at 4, thirty-five at 6 and eighty-four at 8. So the search escalates from depth 1 and stops at the shallowest depth that yields anything: 2 for CLUTRR, 4 for a blood family tree, <code>k</code> for a path world capped at <code>k</code>.</p>
+  <p>It then consults one depth further, which gives CLUTRR its four assignments. The reason is specific. The single shallowest law says <code>husband ∘ wife = wife</code>, which is false: the truth is <em>self</em>, for which CLUTRR has no word. Neither spouse product is ever observed, so no audit can retire the false law. One depth further, the four admitted assignments disagree on exactly that cancellation, and the answer becomes "none of these twenty". Held-out scores are identical either way. The margin is bought entirely off the benchmark, and a test pins it.</p>
+
+  <h3 id="audit">The audit</h3>
+  <p>Laws are derived from products of length two, so validity beyond them is not guaranteed. Each family is checked against every training chain <em>of every length</em>, and retired if a single one contradicts it (an opt-in tolerance relaxes this for noisy labels; <a href="#labels">section 11</a>).</p>
+  <div class="thm"><span class="lab">Proposition 9 — necessary, not sufficient</span>
+    <p>A valid law passes the audit. A law that passes the audit can still be invalid, and looks exactly as exact as a valid one.</p></div>
+  <p>This is not a technicality. Section 10 contains a law that passes its audit on the entire benchmark and is false about families.</p>
+
+  <h3>Preference</h3>
+  <p>By Proposition 3, anything that only narrows is safe, so the preference layer is allowed to be heuristic. It has two sources. <em>Path rules</em> are the smallest trigger sets whose effect on a derived coordinate separates training chains that share an address. They are found as a hitting-set check with support and coverage floors, and both floors were added after failures measured during development: without them, the rules memorised (189 held-out errors) or were pure on training and wrong held out (25). <em>Frequency at the address</em> counts how often training saw each name at the chain's address, over chains of every length. Ties between equally good triggers break in sorted order; without that, one experiment's numbers varied with Python's string-hash seed (correction 7 in <a href="#corrections">section 15</a>).</p>
+
+  <h2 id="path">How the approach was chosen</h2>
+  <p>The model above is what was left after several other approaches were tried and dropped. Most of the process was removal, and the order matters: each step was forced by a measurement on the previous one.</p>
+  <ol class="timeline" aria-label="Approaches tried, in order">
+  <li class="phase">Before this repository</li>
+  <li class="ev gone"><b>1. Invertible representations</b><span class="tag gone">refuted</span><p>Phases, rotations, permutations: composition as a reversible movement. Three lines of arithmetic (Proposition 4) ruled out the whole family before any code was written.</p></li>
+  <li class="ev gone"><b>2. Learned factorisation</b><span class="tag gone">dropped</span><p>Fitted all 62 products and contained nothing: gender alignment +0.03 against ±0.40 for random pairs; 91.9% interpolating, 35.6% extrapolating.</p></li>
+  <li class="ev gone"><b>3. Searching for symmetries</b><span class="tag gone">dropped</span><p>Fifty symmetries of the partial table, none of them gender. Verifying a symmetry is easy; finding the real one among coincidences is not.</p></li>
+  <li class="ev gone"><b>4. Transcribed coordinates</b><span class="tag gone">deleted</span><p>Generation numbers and gender sets typed into the source. It worked, and it was a transcript of the author. Deleted by rule.</p></li>
+  <li class="phase">The model</li>
+  <li class="ev kept"><b>5. Solve for laws, don&#x27;t fit them</b><span class="tag kept">kept</span><p>A null space and a union-find: exactly one additive law, six classes, and a derived partition finer than the hand-written one.</p></li>
+  <li class="ev kept"><b>6. The cone</b><span class="tag kept">kept</span><p>Cancellation, as the bicyclic monoid. Single-name answers rose from 54.7% to 88.1% at unchanged soundness.</p></li>
+  <li class="ev moved"><b>7. Geometry, and three extra layers</b><span class="tag moved">demoted</span><p>A torus version agreed on every chain and added nothing, so it was demoted. Memory, closure and propagation changed no answer, so they were removed.</p></li>
+  <li class="phase">Testing it</li>
+  <li class="ev kept"><b>8. Leave the benchmark</b><span class="tag kept">kept</span><p>A real family tree broke a law CLUTRR cannot falsify. Soundness became an audited property, stated as one.</p></li>
+  <li class="ev moved"><b>9. The prior-art search</b><span class="tag moved">reframed</span><p>Static analysis, not verification. Proposition 4 already known. A claim with no source removed.</p></li>
+  <li class="ev kept"><b>10. Sixth dataset, depth, two extensions</b><span class="tag kept">added</span><p>The second extrapolation split, walks of 10,000 steps, route memory and word senses, each passing the synthetic controls first.</p></li>
+  <li class="ev kept"><b>11. A script for every table</b><span class="tag kept">added</span><p>Writing this page found tables no script reproduced. Re-measured, two changed and one claim was false.</p></li>
+</ol>
+  <p>A note on provenance. The measurements in the first four steps were made in two earlier research repositories this work grew from, and they cannot be reproduced from this one. They are offered as history, to show how the design was arrived at, not as evidence for any claim in <a href="#ledger">the ledger</a>. Everything from step five on is reproducible here.</p>
+  <p>Three habits came out of that sequence and shaped everything after it:</p>
+  <ul>
+    <li><strong>Make the premise falsifiable before making it work.</strong> The invertible-representation idea was killed by three lines of arithmetic (Proposition 4) before any code was written. Weeks of tuning would have produced a mediocre number and no understanding of why.</li>
+    <li><strong>Fitting is not evidence.</strong> A factorisation of the 62 products reproduced every one and contained nothing. Male/female differences in the learned space had alignment +0.03, against ±0.40 for random pairings. It interpolated a hidden product at 91.9% and extrapolated at 35.6%. Reproducing training data is what optimisation does, so the useful test is whether the fit <em>contains</em> the structure, probed directly.</li>
+    <li><strong>A favourite idea can be demoted without being deleted.</strong> A geometric version (the laws as lanes on a torus) agreed with the algebra on all 1,146 held-out chains, and did nothing the algebra doesn't. It was demoted to a corroborating implementation, with a stated price for its return: a measurement where it does something the algebra can't. It is not in this repository.</li>
+  </ul>
+
+  <h2 id="guard">Guarding against my own knowledge</h2>
+  <p>The easiest way for a "derived" model to cheat is for its author to know the answer. I know what <code>father</code> means, and every shortcut I take with that knowledge makes the result less meaningful. These are the guards, and the incidents that made each one necessary.</p>
+  <ul>
+    <li><strong>The derivation ships as the derivation.</strong> At one point generation numbers and gender sets, established in a throwaway script, were typed into the program as a dictionary. The program worked, and every measurement after that was reported against code that could not have produced those numbers on any other input. The file was deleted, and the rule since then is that a literal the code could compute does not ship.</li>
+    <li><strong>Variable names can carry knowledge.</strong> A gender result was withdrawn when it turned out to depend on word pairs being listed male-first. The pairing had no such order in the data; the order came from how I typed it.</li>
+    <li><strong>The code is scanned for domain words.</strong> The derivation and solving modules contain no kinship words outside comments and docstrings. That is checked by scanning the source, not asserted.</li>
+    <li><strong>Synthetic controls come first.</strong> The first half of the test suite runs the same code on algebras with no people in them: a stack of pushes and pops, an additive ladder, left- and right-zero semigroups, a structureless magma and <code>ℤ/5</code>. Each one checks that the right family is found, or that none is. If a mechanism only works on kinship, these fail.</li>
+    <li><strong>Each extension passes the same controls.</strong> Route memory and word senses (<a href="#inlaw">section 12</a>) had to derive <em>nothing</em> on worlds without the structure they look for before any kinship result counted.</li>
+    <li><strong>Lanes are measured stripped.</strong> A lane's correctness is measured on its own, not through the assembled model, because the other lanes distort the reading in both directions. At the shallowest depth the cone alone admits both spouses, and the class lane then narrows that to the single, wrong name <code>wife</code>. It does not fix the error; it makes the error confident.</li>
+  </ul>
+
+  <h2 id="discipline">How measurements are made</h2>
+  <ul>
+    <li><strong>A number no script reproduces is a claim, not a measurement.</strong> For a while early on, every end-to-end number came from a shell script that was thrown away, while the modules it measured were imported by nothing. Since then every reported figure is printed by one of four scripts or asserted by a test. Writing this page tested that rule again: several tables in the older writeups had no script behind them. They were re-measured by a new one (<code>stress</code>), two of them changed, and one claim turned out to be false (corrections 9 and 10).</li>
+    <li><strong>Deterministic, and checked to be.</strong> All reported numbers were re-run under eight different Python hash seeds. That check found one experiment whose numbers moved, traced it to an unordered tie-break, and fixed it.</li>
+    <li><strong>Held-out data is touched once.</strong> Candidate features are selected on a validation split carved out of <em>training</em>, and only then scored held out. <a href="#bait">Section 11</a> shows a feature this protocol correctly rejected.</li>
+    <li><strong>A score comes with its ceiling.</strong> Because the corpus answers some chains two ways, every score is reported next to the best any function of the chain could reach. Anyone can compute that ceiling from the test set alone, without trusting the model.</li>
+    <li><strong>Comparisons are checked for like-for-like.</strong> Before comparing with published systems, I read their papers for the input format (<a href="#context">section 13</a>). One early claim, that the comparison was meaningless, did not survive that reading.</li>
+  </ul>
+
+  <h2 id="results">Results on CLUTRR</h2>
+  <p>CLUTRR (<a href="https://arxiv.org/abs/1908.06177">Sinha et al., 2019</a>) has a text setting and a symbolic one. The best systems are measured symbolically, on the relation graph with only the required facts. This model uses the same input. The public release has six datasets.</p>
+  <p class="cap">All six datasets. The model is trained once on <code>gen_train23</code>, except for the second extrapolation split, which is trained on its own data as its published protocol requires.</p>
+  <div class="table"><table>
+    <thead><tr><th>Dataset</th><th class="n">Stories</th><th class="n">Sound</th><th class="n">Top-1</th><th class="n">Ceiling</th><th class="n">Mean set</th></tr></thead>
+    <tbody>
+      <tr><td><code>gen_train23</code>, all lengths</td><td class="n">1,146</td><td class="n">100%</td><td class="n">99.39%</td><td class="n">99.56%</td><td class="n">1.12</td></tr>
+      <tr class="ours"><td><code>gen_train23</code>, unseen lengths 4–10</td><td class="n">1,003</td><td class="n">100%</td><td class="n">99.80%</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td><code>gen_train234</code>, all lengths</td><td class="n">1,048</td><td class="n">100%</td><td class="n">98.09%</td><td class="n">99.52%</td><td class="n">1.11</td></tr>
+      <tr class="ours"><td><code>gen_train234</code>, unseen lengths 5–10</td><td class="n">826</td><td class="n">100%</td><td class="n">99.39%</td><td class="n">100%</td><td class="n">—</td></tr>
+      <tr><td><code>rob_train_clean</code></td><td class="n">447</td><td class="n">100%</td><td class="n">100.00%</td><td class="n">100.00%</td><td class="n">1.65</td></tr>
+      <tr><td><code>rob_train_disc</code></td><td class="n">445</td><td class="n">100%</td><td class="n">94.83%</td><td class="n">94.83%</td><td class="n">1.65</td></tr>
+      <tr><td><code>rob_train_irr</code></td><td class="n">444</td><td class="n">100%</td><td class="n">93.69%</td><td class="n">93.69%</td><td class="n">1.91</td></tr>
+      <tr><td><code>rob_train_sup</code></td><td class="n">447</td><td class="n">100%</td><td class="n">93.74%</td><td class="n">93.74%</td><td class="n">1.78</td></tr>
+    </tbody>
+  </table></div>
+  <p>The derived laws are identical on all five <code>gen_train23</code>-style instances, down to the cone assignment: retraining on each one's own data changes nothing. The four <code>rob_*</code> datasets test distracting sentences in the prose. For a model that never reads prose, they are four more independent samples of chains of length two and three, so they test consistency, not extrapolation.</p>
+
+  <h3>Next to published systems</h3>
+  <p class="cap">Top-1 by chain length, trained on 2–3 steps. Published numbers are means over runs, from R5 (<a href="https://arxiv.org/abs/2205.06454">Lu et al., 2022</a>), Table 2.</p>
+  <div class="table"><table>
+    <thead><tr><th>Steps</th><th class="n">4</th><th class="n">5</th><th class="n">6</th><th class="n">7</th><th class="n">8</th><th class="n">9</th><th class="n">10</th></tr></thead>
+    <tbody>
+      <tr class="ours"><td>This model</td><td class="n">99.5</td><td class="n">99.4</td><td class="n">100</td><td class="n">100</td><td class="n">100</td><td class="n">100</td><td class="n">100</td></tr>
+      <tr><td>R5 (ICLR 2022)</td><td class="n">98</td><td class="n">99</td><td class="n">98</td><td class="n">96</td><td class="n">97</td><td class="n">98</td><td class="n">97</td></tr>
+      <tr><td>CTP<sub>A</sub> (ICML 2020)</td><td class="n">99</td><td class="n">99</td><td class="n">99</td><td class="n">96</td><td class="n">94</td><td class="n">89</td><td class="n">90</td></tr>
+      <tr><td>GAT</td><td class="n">91</td><td class="n">76</td><td class="n">54</td><td class="n">56</td><td class="n">54</td><td class="n">55</td><td class="n">45</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">Trained on 2–4 steps. Published numbers from EpiGNN (<a href="https://proceedings.iclr.cc/paper_files/paper/2025/file/6590cb829f5ffef50050f3e5845fbb4c-Paper-Conference.pdf">Khalid &amp; Schockaert, 2025</a>), Table 1.</p>
+  <div class="table"><table>
+    <thead><tr><th>Steps</th><th class="n">5</th><th class="n">6</th><th class="n">7</th><th class="n">8</th><th class="n">9</th><th class="n">10</th></tr></thead>
+    <tbody>
+      <tr class="ours"><td>This model</td><td class="n">98.4</td><td class="n">100</td><td class="n">98.7</td><td class="n">100</td><td class="n">100</td><td class="n">100</td></tr>
+      <tr><td>NCRL (ICLR 2023)</td><td class="n">100</td><td class="n">99</td><td class="n">98</td><td class="n">98</td><td class="n">98</td><td class="n">97</td></tr>
+      <tr><td>R5 (ICLR 2022)</td><td class="n">99</td><td class="n">99</td><td class="n">99</td><td class="n">100</td><td class="n">99</td><td class="n">98</td></tr>
+      <tr><td>EpiGNN (ICLR 2025)</td><td class="n">99</td><td class="n">99</td><td class="n">99</td><td class="n">99</td><td class="n">96</td><td class="n">98</td></tr>
+    </tbody>
+  </table></div>
+  <p>The honest reading is <strong>the same level as the best published systems, not better</strong>. Three reasons. The top systems sit within their own run-to-run spread (±1–5%) of 100%. The published numbers use CLUTRR's original data release, and these runs use the HuggingFace release of the same splits: generated the same way, but not identical test sets. And a difference of one or two stories per length is not a result. What the comparison does support is narrower and still interesting: a model with no weights, reading opaque symbols, reaches the level of trained neuro-symbolic rule learners, and reports which answers it is unsure of.</p>
+
+  <h3>Where the misses are</h3>
+  <p>Every miss was examined, not just counted. On <code>gen_train23</code>, 7 of 1,146 stories are missed. Five are the corpus contradicting itself: <code>wife · son · grandmother</code> appears in the test set with both answers, and no function of the chain can get both. The other two reduce in the algebra to the same shape (a spouse's child is your child, whose grandmother is your mother or your spouse's). On <code>gen_train234</code>, every miss at every length is the same kind: the answer set is correctly <code>{mother, mother-in-law}</code> or <code>{father, father-in-law}</code>, and the preference picks the blood term when the label is the in-law one.</p>
+  <p>One result there runs against intuition. On the <code>gen_train234</code> unseen lengths, the model trained on its own 2–4-step data scores 99.39%, and the model trained on the shorter <code>gen_train23</code> data scores 100%. The laws are identical, so the difference is entirely in the preference: the extra four-step training chains shift the frequency counts at the two ambiguous addresses. More data made a heuristic slightly worse, and the soundness guarantee was untouched either way. It is reported as observed.</p>
+
+  <h2 id="ablation">What each part is worth</h2>
+  <p>Proposition 2 predicts that every ablation stays 100% sound, so what ablation measures is precision.</p>
+  <p class="cap">On <code>gen_train23</code>, held-out lengths 2–10. From <code>stress</code>.</p>
+  <div class="table"><table>
+    <thead><tr><th>Laws</th><th class="n">Sound</th><th class="n">Top-1</th><th class="n">One name</th><th class="n">Mean set</th></tr></thead>
+    <tbody>
+      <tr class="ours"><td>All families</td><td class="n">100%</td><td class="n">99.4%</td><td class="n">88.1%</td><td class="n">1.12</td></tr>
+      <tr><td>Without the cone</td><td class="n">100%</td><td class="n">72.3%</td><td class="n">54.7%</td><td class="n">1.45</td></tr>
+      <tr><td>Without the classes</td><td class="n">100%</td><td class="n">87.3%</td><td class="n">0.0%</td><td class="n">2.39</td></tr>
+      <tr><td>Without the additive</td><td class="n">100%</td><td class="n">98.7%</td><td class="n">88.1%</td><td class="n">1.12</td></tr>
+      <tr><td>The cone alone</td><td class="n">100%</td><td class="n">87.3%</td><td class="n">0.0%</td><td class="n">2.39</td></tr>
+      <tr><td>Without the path rules</td><td class="n">100%</td><td class="n">98.8%</td><td class="n">88.1%</td><td class="n">1.12</td></tr>
+    </tbody>
+  </table></div>
+  <p>The cone is worth 27 points here, and 10.6 across all five instances (97.06% against 86.45%). The classes carry every male/female distinction, so without them nothing is ever pinned to one name. The additive family is nearly redundant once the cone exists, as Proposition 6 predicts, since it is the cone's shadow. The whole preference stack is worth 0.6 points.</p>
+  <p>Three further layers were measured on all five instances and removed, because they changed <em>no answer</em> once the cone existed: a memory of witnessed transitions, closure over observed composites, and unit propagation of the observed table. More expressive law families were tried and likewise changed nothing on CLUTRR. A layer that has stopped paying for itself is a finding about the model, and it doesn't ship.</p>
+
+  <h2 id="break">Trying to break it</h2>
+  <p>The headline numbers say the model works on the benchmark it was built for. The questions below are the ones a sceptical reviewer would ask next, and each was answered by a measurement designed to make the model fail. Some of them did.</p>
+
+  <h3>"The training data is basically the answer"</h3>
+  <p>Sixty-two products out of four hundred sounds like a lot of help. So take products away, choosing five seeded random subsets at each size, and see what survives.</p>
+  <figure class="fig wide">
+  <div class="frame">
+  <svg viewBox="0 0 620 300" role="img" aria-label="Soundness against the number of training products kept. With 15 of 62 it is 9.8 percent sound; it reaches 100 percent at 55.">
+    <line x1="58" y1="254.0" x2="590" y2="254.0" class="sv-grid"/>
+    <text x="50" y="258.0" text-anchor="end" font-size="11" class="sv-muted">0%</text>
+    <line x1="58" y1="199.0" x2="590" y2="199.0" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="203.0" text-anchor="end" font-size="11" class="sv-muted">25%</text>
+    <line x1="58" y1="144.0" x2="590" y2="144.0" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="148.0" text-anchor="end" font-size="11" class="sv-muted">50%</text>
+    <line x1="58" y1="89.0" x2="590" y2="89.0" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="93.0" text-anchor="end" font-size="11" class="sv-muted">75%</text>
+    <line x1="58" y1="34.0" x2="590" y2="34.0" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="38.0" text-anchor="end" font-size="11" class="sv-muted">100%</text>
+    <text x="18" y="22" font-size="11" class="sv-muted">sound</text>
+    <text x="109.2" y="272" text-anchor="middle" font-size="11" class="sv-muted">15</text>
+    <text x="201.2" y="272" text-anchor="middle" font-size="11" class="sv-muted">24</text>
+    <text x="272.8" y="272" text-anchor="middle" font-size="11" class="sv-muted">31</text>
+    <text x="334.2" y="272" text-anchor="middle" font-size="11" class="sv-muted">37</text>
+    <text x="426.3" y="272" text-anchor="middle" font-size="11" class="sv-muted">46</text>
+    <text x="518.4" y="272" text-anchor="middle" font-size="11" class="sv-muted">55</text>
+    <text x="590.0" y="272" text-anchor="middle" font-size="11" class="sv-muted">62</text>
+    <text x="324.0" y="292" text-anchor="middle" font-size="11" class="sv-muted">training products kept, of 62</text>
+    <polyline points="109.2,232.4 201.2,138.1 272.8,90.1 334.2,70.3 426.3,41.5 518.4,34.0 590.0,34.0" fill="none" class="sv-a" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="109.2" cy="232.4" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>15 products kept: 9.8% sound</title></circle>
+    <circle cx="201.2" cy="138.1" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>24 products kept: 52.7% sound</title></circle>
+    <circle cx="272.8" cy="90.1" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>31 products kept: 74.5% sound</title></circle>
+    <circle cx="334.2" cy="70.3" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>37 products kept: 83.5% sound</title></circle>
+    <circle cx="426.3" cy="41.5" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>46 products kept: 96.6% sound</title></circle>
+    <circle cx="518.4" cy="34.0" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>55 products kept: 100% sound</title></circle>
+    <circle cx="590.0" cy="34.0" r="5" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="2"><title>62 products kept: 100% sound</title></circle>
+    <text x="119.2" y="236.4" text-anchor="start" font-size="11.5" class="sv-ink">9.8%</text>
+    <text x="211.2" y="142.1" text-anchor="start" font-size="11.5" class="sv-ink">52.7%</text>
+    <text x="426.3" y="63.5" text-anchor="middle" font-size="11.5" class="sv-ink">96.6%</text>
+    <text x="518.4" y="22.0" text-anchor="middle" font-size="11.5" class="sv-ink">100%</text>
+  </svg>
+  </div>
+  <figcaption><strong>Soundness needs enough evidence to kill false laws.</strong> Each point is the mean of five seeded random subsets of the 62 training products. With 15, the derived laws are exact, confident and wrong on nine chains in ten. Soundness is not a property of the method alone.</figcaption>
+</figure>
+  <div class="table"><table>
+    <thead><tr><th>Products kept, of 62</th><th class="n">15</th><th class="n">24</th><th class="n">31</th><th class="n">37</th><th class="n">46</th><th class="n">55</th><th class="n">62</th></tr></thead>
+    <tbody>
+      <tr><td>Sound</td><td class="n">9.8%</td><td class="n">52.7%</td><td class="n">74.5%</td><td class="n">83.5%</td><td class="n">96.6%</td><td class="n">100%</td><td class="n">100%</td></tr>
+      <tr><td>Top-1</td><td class="n">9.8%</td><td class="n">52.2%</td><td class="n">72.2%</td><td class="n">82.5%</td><td class="n">95.9%</td><td class="n">99.3%</td><td class="n">99.4%</td></tr>
+      <tr><td>Chains it can read</td><td class="n">767</td><td class="n">946</td><td class="n">967</td><td class="n">1,051</td><td class="n">1,144</td><td class="n">1,146</td><td class="n">1,146</td></tr>
+    </tbody>
+  </table></div>
+  <p>This is the most uncomfortable result on the page. With a quarter of the products the derived laws are <strong>confidently wrong</strong>, and nothing warns you, because a law fitted to too little evidence looks exactly as exact as a true one. Soundness is not a property of the method alone. It is a property of the method <em>plus enough data to falsify the laws that are false</em>. The derivation cannot tell you which regime you are in.</p>
+
+  <h3 id="labels">"Exact derivation must be brittle to noisy labels"</h3>
+  <p>It is. Replace a share of training answers with a random word:</p>
+  <figure class="fig wide">
+  <div class="frame">
+  <svg viewBox="0 0 620 318" role="img" aria-label="Label noise. Exact derivation top-1 collapses from 99.4 to 6.5 percent at half a percent corruption, and the share of chains it can read falls to zero by ten percent. With tolerance 0.1, top-1 holds at 98.8 percent up to ten percent corruption and collapses at twenty.">
+    <line x1="58" y1="272.0" x2="590" y2="272.0" class="sv-grid"/>
+    <text x="50" y="276.0" text-anchor="end" font-size="11" class="sv-muted">0%</text>
+    <line x1="58" y1="216.5" x2="590" y2="216.5" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="220.5" text-anchor="end" font-size="11" class="sv-muted">25%</text>
+    <line x1="58" y1="161.0" x2="590" y2="161.0" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="165.0" text-anchor="end" font-size="11" class="sv-muted">50%</text>
+    <line x1="58" y1="105.5" x2="590" y2="105.5" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="109.5" text-anchor="end" font-size="11" class="sv-muted">75%</text>
+    <line x1="58" y1="50.0" x2="590" y2="50.0" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="50" y="54.0" text-anchor="end" font-size="11" class="sv-muted">100%</text>
+    <text x="18" y="38" font-size="11" class="sv-muted"></text>
+    <text x="58.0" y="290" text-anchor="middle" font-size="11" class="sv-muted">0%</text>
+    <text x="146.7" y="290" text-anchor="middle" font-size="11" class="sv-muted">0.5%</text>
+    <text x="235.3" y="290" text-anchor="middle" font-size="11" class="sv-muted">1%</text>
+    <text x="324.0" y="290" text-anchor="middle" font-size="11" class="sv-muted">2%</text>
+    <text x="412.7" y="290" text-anchor="middle" font-size="11" class="sv-muted">5%</text>
+    <text x="501.3" y="290" text-anchor="middle" font-size="11" class="sv-muted">10%</text>
+    <text x="590.0" y="290" text-anchor="middle" font-size="11" class="sv-muted">20%</text>
+    <text x="324.0" y="310" text-anchor="middle" font-size="11" class="sv-muted">training answers replaced by a random word</text>
+    <polyline points="58.0,51.3 146.7,52.7 235.3,52.7 324.0,52.7 412.7,52.7 501.3,52.7 590.0,257.6" fill="none" class="sv-a" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="58.0" cy="51.3" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 0% corrupted: 99.4%</title></circle>
+    <circle cx="146.7" cy="52.7" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 0.5% corrupted: 98.8%</title></circle>
+    <circle cx="235.3" cy="52.7" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 1% corrupted: 98.8%</title></circle>
+    <circle cx="324.0" cy="52.7" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 2% corrupted: 98.8%</title></circle>
+    <circle cx="412.7" cy="52.7" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 5% corrupted: 98.8%</title></circle>
+    <circle cx="501.3" cy="52.7" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 10% corrupted: 98.8%</title></circle>
+    <circle cx="590.0" cy="257.6" r="4" class="sv-afill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Tolerant, top-1, 20% corrupted: 6.5%</title></circle>
+    <line x1="58" y1="20" x2="80" y2="20" class="sv-a" stroke-width="2"/>
+    <text x="86" y="24" font-size="11.5" class="sv-ink">Tolerant, top-1</text>
+    <polyline points="58.0,50.0 146.7,50.0 235.3,83.7 324.0,113.7 412.7,271.3 501.3,272.0 590.0,272.0" fill="none" class="sv-m" stroke-width="2" stroke-dasharray="2 4" stroke-linejoin="round"/>
+    <circle cx="58.0" cy="50.0" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 0% corrupted: 100%</title></circle>
+    <circle cx="146.7" cy="50.0" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 0.5% corrupted: 100%</title></circle>
+    <circle cx="235.3" cy="83.7" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 1% corrupted: 84.8%</title></circle>
+    <circle cx="324.0" cy="113.7" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 2% corrupted: 71.3%</title></circle>
+    <circle cx="412.7" cy="271.3" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 5% corrupted: 0.3%</title></circle>
+    <circle cx="501.3" cy="272.0" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 10% corrupted: 0%</title></circle>
+    <circle cx="590.0" cy="272.0" r="4" class="sv-mfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, chains it can read, 20% corrupted: 0%</title></circle>
+    <line x1="206.0" y1="20" x2="228.0" y2="20" class="sv-m" stroke-width="2" stroke-dasharray="2 4"/>
+    <text x="234.0" y="24" font-size="11.5" class="sv-ink">Exact, chains it can read</text>
+    <polyline points="58.0,51.3 146.7,257.6 235.3,254.9 324.0,260.5 412.7,271.8 501.3,272.0 590.0,272.0" fill="none" class="sv-w" stroke-width="2" stroke-dasharray="7 4" stroke-linejoin="round"/>
+    <circle cx="58.0" cy="51.3" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 0% corrupted: 99.4%</title></circle>
+    <circle cx="146.7" cy="257.6" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 0.5% corrupted: 6.5%</title></circle>
+    <circle cx="235.3" cy="254.9" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 1% corrupted: 7.7%</title></circle>
+    <circle cx="324.0" cy="260.5" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 2% corrupted: 5.2%</title></circle>
+    <circle cx="412.7" cy="271.8" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 5% corrupted: 0.1%</title></circle>
+    <circle cx="501.3" cy="272.0" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 10% corrupted: 0%</title></circle>
+    <circle cx="590.0" cy="272.0" r="4" class="sv-wfill sv-pt" stroke="var(--panel)" stroke-width="1.5"><title>Exact, top-1, 20% corrupted: 0%</title></circle>
+    <line x1="418.0" y1="20" x2="440.0" y2="20" class="sv-w" stroke-width="2" stroke-dasharray="7 4"/>
+    <text x="446.0" y="24" font-size="11.5" class="sv-ink">Exact, top-1</text>
+    <text x="324.0" y="42.7" text-anchor="middle" font-size="11" class="sv-ink">tolerant: 98.8% to 10%</text>
+    <text x="191.0" y="244.9" text-anchor="middle" font-size="11" class="sv-ink">exact top-1</text>
+    <text x="363.9" y="161.0" text-anchor="start" font-size="11" class="sv-ink">exact: share readable</text>
+  </svg>
+  </div>
+  <figcaption><strong>Exact laws are brittle; the tolerance is not.</strong> One corrupted answer in two hundred retires every exact law. From one in a hundred, corruption also deletes words, and the share of held-out chains the exact model can read at all (dotted) falls to zero by 10%. The opt-in tolerance holds top-1 at 98.8% through 10% and gives up at 20%.</figcaption>
+</figure>
+  <div class="table"><table>
+    <thead><tr><th>Corrupted</th><th class="n">0%</th><th class="n">0.5%</th><th class="n">1%</th><th class="n">2%</th><th class="n">5%</th><th class="n">10%</th><th class="n">20%</th></tr></thead>
+    <tbody>
+      <tr><td>Exact: words left</td><td class="n">20</td><td class="n">20</td><td class="n">17</td><td class="n">15</td><td class="n">5</td><td class="n">0</td><td class="n">0</td></tr>
+      <tr><td>Exact: chains it can read</td><td class="n">100%</td><td class="n">100%</td><td class="n">84.8%</td><td class="n">71.3%</td><td class="n">0.3%</td><td class="n">0%</td><td class="n">0%</td></tr>
+      <tr><td>Exact: sound, on those</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">—</td><td class="n">—</td></tr>
+      <tr><td>Exact: top-1</td><td class="n">99.4%</td><td class="n">6.5%</td><td class="n">7.7%</td><td class="n">5.2%</td><td class="n">0.1%</td><td class="n">0%</td><td class="n">0%</td></tr>
+      <tr class="ours"><td>Tolerant: top-1</td><td class="n">99.4%</td><td class="n">98.8%</td><td class="n">98.8%</td><td class="n">98.8%</td><td class="n">98.8%</td><td class="n">98.8%</td><td class="n">6.5%</td></tr>
+      <tr><td>Tolerant: sound</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td></tr>
+    </tbody>
+  </table></div>
+  <p>One corrupted answer in two hundred retires every law, because a single contradicting chain is enough and there are over nine thousand of them. There is a second effect, found while writing this page. A product whose witnesses disagree is dropped, and a word with no surviving product leaves the vocabulary. At 1% corruption three words are gone; at 10%, all of them. The older writeup said soundness "stays at 100% throughout". That was measured only on the chains the model could still read, which by 5% is three stories. On those it is still sound; on the rest it can't answer at all. The table now shows both, and a test pins the vocabulary loss.</p>
+  <p>The opt-in <code>tolerance=0.1</code> settles each product by majority and keeps a law while the share of chains contradicting it stays under 10%. On clean data it changes nothing, to every decimal place. It holds through 10% corruption and gives up at 20%, by abstaining. The default stays at zero, because a tolerance is exactly what lets a false law survive its audit.</p>
+
+  <h3>"What if the input facts are wrong?"</h3>
+  <p>CLUTRR's own noise lives in the prose, so it was rebuilt on the symbolic side, in a stricter form: extra edges are added to each story's graph, and the model must find every route between the two people itself, compose each, and intersect the answer sets. Intersection is the sound combination, since extra true facts can only narrow.</p>
+  <div class="table"><table>
+    <thead><tr><th>Extra facts per story</th><th class="n">0</th><th class="n">1</th><th class="n">2</th><th class="n">5</th><th class="n">10</th></tr></thead>
+    <tbody>
+      <tr><td>True but irrelevant: sound</td><td class="n">99.8%</td><td class="n">99.8%</td><td class="n">99.8%</td><td class="n">99.8%</td><td class="n">99.8%</td></tr>
+      <tr><td>False: answered and sound</td><td class="n">99.8%</td><td class="n">68.2%</td><td class="n">45.6%</td><td class="n">13.1%</td><td class="n">2.0%</td></tr>
+      <tr><td>False: contradiction flagged</td><td class="n">0.2%</td><td class="n">31.8%</td><td class="n">54.4%</td><td class="n">86.9%</td><td class="n">98.0%</td></tr>
+      <tr class="ours"><td>False: silently wrong</td><td class="n">0.0%</td><td class="n">0.0%</td><td class="n">0.0%</td><td class="n">0.0%</td><td class="n">0.0%</td></tr>
+    </tbody>
+  </table></div>
+  <p>Irrelevant facts change nothing, exactly, and the test asserts equality, not a tolerance. False facts can destroy an answer, but two routes that disagree intersect to the empty set, which is a detected contradiction. (The 0.2% baseline is two stories whose graphs revisit a person, which creates a short cut whose composite has no word in the vocabulary.) The rate of confidently wrong answers stays at zero. That was not tuned in; it follows from soundness plus set-valued answers.</p>
+
+  <h3 id="tree">"The benchmark is one generator"</h3>
+  <p>So the model was taken somewhere CLUTRR can't follow: a family tree built generation by generation and walked at random. The true relation comes from graph distance (nearest common ancestor, steps up, steps down), never from composing the chain. Walks never meet the same person twice, which is the condition under which the words determine the answer at all.</p>
+  <div class="table"><table>
+    <thead><tr><th>Chain length</th><th class="n">2</th><th class="n">3</th><th class="n">5</th><th class="n">8</th></tr></thead>
+    <tbody>
+      <tr><td>Walks</td><td class="n">1,211</td><td class="n">981</td><td class="n">393</td><td class="n">10</td></tr>
+      <tr><td>Laws from CLUTRR: sound</td><td class="n">87.0%</td><td class="n">78.9%</td><td class="n">81.7%</td><td class="n">90.0%</td></tr>
+      <tr class="ours"><td>Laws from the tree: sound and top-1</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td></tr>
+    </tbody>
+  </table></div>
+  <p>This is where "audited, not proved" gets a number. In the entire CLUTRR corpus, train and test, every chain ending in <code>husband</code> answers <code>son-in-law</code>, because the only such chain that ever occurs is <code>daughter · husband</code>. So the class law files <code>husband</code> with <code>son-in-law</code>, passes its audit on every chain the benchmark contains, and is false about families: your mother's husband is your father, and the CLUTRR-derived laws admit nothing there. Trained on the tree's own 48 products, the six classes coarsen to four, a left-projection law appears with two classes, and every answer on walks through a different tree is right.</p>
+  <p class="cap">Is that one lucky tree? Five trees, 500 two-step walks each, from <code>stress</code>.</p>
+  <div class="table"><table>
+    <thead><tr><th>Tree seed</th><th class="n">5</th><th class="n">42</th><th class="n">99</th><th class="n">1234</th><th class="n">7777</th></tr></thead>
+    <tbody>
+      <tr><td>People</td><td class="n">2,046</td><td class="n">1,132</td><td class="n">2,596</td><td class="n">2,440</td><td class="n">1,216</td></tr>
+      <tr><td>Laws from CLUTRR: sound</td><td class="n">88.2%</td><td class="n">87.4%</td><td class="n">85.8%</td><td class="n">85.0%</td><td class="n">85.4%</td></tr>
+      <tr><td>Own laws: sound and top-1</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td><td class="n">100%</td></tr>
+      <tr><td>Classes derived</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">4</td></tr>
+    </tbody>
+  </table></div>
+  <p>The lesson is general, and it is the most important one in this work: <strong>a benchmark's coverage decides which laws can be derived from it, and no audit against that benchmark can see past it.</strong> The only defences are cheap ones: take the model somewhere its benchmark can't follow, and remove data on purpose to watch where it breaks.</p>
+
+  <h3>"How deep can it really go?"</h3>
+  <p>Real family trees run out of new people at around twenty steps, so a deeper test needs a family that grows as it is walked: parents are created the first time anyone asks for one, and a new child can always be born. The truth is still read from the family, never computed by composition.</p>
+  <div class="table"><table>
+    <thead><tr><th>Chain length</th><th class="n">Chains</th><th class="n">Sound</th><th class="n">Top-1</th><th class="n">Time per answer</th></tr></thead>
+    <tbody>
+      <tr><td>10</td><td class="n">300</td><td class="n">100%</td><td class="n">100%</td><td class="n">0.06 ms</td></tr>
+      <tr><td>100</td><td class="n">300</td><td class="n">100%</td><td class="n">100%</td><td class="n">0.25 ms</td></tr>
+      <tr><td>1,000</td><td class="n">100</td><td class="n">100%</td><td class="n">100%</td><td class="n">2.3 ms</td></tr>
+    </tbody>
+  </table></div>
+  <p>Those are laws derived from CLUTRR chains of length two and three, never retrained, on walks restricted to relatives CLUTRR has words for. Unrestricted walks of 100, 1,000 and 10,000 steps end on people no word names, such as <code>(2, 10072)</code>: two generations up and ten thousand and seventy-two down. The model correctly answers with no name, and the address underneath can be checked directly. On every walk tested it equals the true (ascent, descent) exactly.</p>
+
+  <h3>"It only works because kinship is bicyclic"</h3>
+  <p>That is true, and the useful question is what happens elsewhere. The same code, unchanged, on worlds with no people in them:</p>
+  <div class="table"><table>
+    <thead><tr><th>World</th><th class="n">Symbols</th><th class="n">Products</th><th>Derived</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Filesystem paths, one folder name</td><td class="n">16</td><td class="n">176</td><td>1 additive, 1 cone</td><td>100% exact at 10,000 steps</td></tr>
+      <tr><td>Filesystem paths, two folder names</td><td class="n">45</td><td class="n">846</td><td>1 additive, 1 cone</td><td>100% sound, about 6 names per answer</td></tr>
+      <tr><td>Movement on a grid</td><td class="n">49</td><td class="n">1,369</td><td>2 additive</td><td>100% exact at 10,000 steps</td></tr>
+      <tr><td>Kinship, open vocabulary (cousins, removes)</td><td class="n">36</td><td class="n">160</td><td>1 additive, 2 cone, 4 + 2 classes</td><td>100% exact to 10 steps</td></tr>
+      <tr><td>S₃, the smallest non-abelian group</td><td class="n">6</td><td class="n">36</td><td>nothing</td><td>100% sound, 13.0% top-1, all 6 names</td></tr>
+      <tr><td>ℤ/4, a clock</td><td class="n">4</td><td class="n">16</td><td>nothing</td><td>100% sound, 31.5% top-1, all 4 names</td></tr>
+    </tbody>
+  </table></div>
+  <p>Each row says something the kinship result can't. Paths are the same monoid (<code>..</code> pops, a folder name pushes), and because paths contain a full cancellation back to the identity, they pin the cone assignment <em>uniquely</em> where CLUTRR leaves four. That identifies exactly which missing observation CLUTRR would need. Two folder names make a world richer than the law, where <code>x/y</code> and <code>y/x</code> share coordinates; the model widens its answer instead of guessing. The grid needs two additive coordinates, read from the null space without being told. And the two groups fit no family, so the model derives nothing, admits everything, and says so. That is the intended behaviour at the edge of the menu, and the reason the menu is stated as a prior.</p>
+
+  <h3>"Does it scale?"</h3>
+  <p>It did not, at first. A 225-symbol derivation spent all its time in dense rational elimination, and in a second copy of the same elimination inside the cone search. Sparse incremental elimination (<a href="#algorithms">section 5</a>) fixed both.</p>
+  <p class="cap">One run on a laptop, from <code>stress --dense</code>. Absolute times vary between runs; the ratios don't.</p>
+  <div class="table"><table>
+    <thead><tr><th>World</th><th class="n">Symbols</th><th class="n">Products</th><th class="n">Whole derivation</th><th class="n">Kernel, sparse</th><th class="n">Kernel, dense</th></tr></thead>
+    <tbody>
+      <tr><td>Paths, two names</td><td class="n">60</td><td class="n">1,888</td><td class="n">0.18 s</td><td class="n">0.04 s</td><td class="n">7.5 s</td></tr>
+      <tr><td>Grid, span 5</td><td class="n">121</td><td class="n">8,281</td><td class="n">1.3 s</td><td class="n">0.22 s</td><td class="n">20 s</td></tr>
+      <tr><td>Grid, span 7</td><td class="n">225</td><td class="n">28,561</td><td class="n">1.4 s</td><td class="n">0.84 s</td><td class="n">194 s</td></tr>
+      <tr><td>Grid, span 10</td><td class="n">441</td><td class="n">109,561</td><td class="n">6.5 s</td><td class="n">3.8 s</td><td class="n">—</td></tr>
+      <tr><td>Grid, span 14</td><td class="n">841</td><td class="n">398,161</td><td class="n">27 s</td><td class="n">17 s</td><td class="n">—</td></tr>
+    </tbody>
+  </table></div>
+  <p>At 225 symbols the sparse kernel is over two hundred times faster than the dense one, with identical output. The arithmetic is still exact over the rationals, so this is a constant-factor result, not a complexity one. Answering was never the bottleneck: it is linear in chain length and independent of vocabulary size.</p>
+
+  <h3 id="bait">A feature that won on validation and lost held out</h3>
+  <p>The remaining CLUTRR misses tempt a fix. The model already computes whether a symbol at cone coordinate <code>(0, 0)</code> (a spouse, though the code never calls it that) appears in the chain, and "spouse anywhere, so answer the in-law name" looks like it should help at the two ambiguous addresses. It was selected by the protocol in <a href="#discipline">section 8</a>:</p>
+  <div class="table"><table>
+    <thead><tr><th>Rule at the ambiguous addresses</th><th class="n">Fit (59)</th><th class="n">Validation (15)</th><th class="n">Held out (136)</th></tr></thead>
+    <tbody>
+      <tr><td>Always the blood name</td><td class="n">72.9%</td><td class="n">80.0%</td><td class="n">89.7%</td></tr>
+      <tr><td>Spouse anywhere → in-law name</td><td class="n">89.8%</td><td class="n">93.3%</td><td class="n">87.5%</td></tr>
+      <tr class="ours"><td>The shipped preference</td><td class="n">—</td><td class="n">—</td><td class="n">94.9%</td></tr>
+    </tbody>
+  </table></div>
+  <p>The feature beats the baseline on the data it was fitted on and on honest validation, and is worse than doing nothing held out. That is distribution shift, not overfitting, and the cause is measurable. A marriage crossing can be absorbed by a later step down (your wife's daughter is your daughter), and chains of length two and three rarely show it: a spouse appears in 35.1% of these training chains and 22.8% held out. The distinction the rule needs is longer than any training chain of that shape. This is exactly the trap CLUTRR was built to set, and a standard train/validation protocol walks into it. The experiment is kept as a test, so the feature can't be rediscovered and shipped on its validation number.</p>
+
+  <h3 id="audit-margin">The audit and the margin catch different failures</h3>
+  <p>Two defences protect soundness, and it would be easy to assume one covers the other. Both were measured on a case built to break each:</p>
+  <div class="table"><table class="wrap-cells">
+    <thead><tr><th>Case</th><th>The audit</th><th>The depth margin</th></tr></thead>
+    <tbody>
+      <tr><td>A multi-valued world (a sibling's sibling may be yourself)</td><td>Decisive: 34 cone laws retired, soundness 19.2% → 100%</td><td>Blind: 19.2% at every margin</td></tr>
+      <tr><td>A product never observed (<code>husband ∘ wife</code>)</td><td>Blind: nothing contradicts the false law</td><td>Decisive: "none of these" instead of a wrong name</td></tr>
+    </tbody>
+  </table></div>
+  <p>In the multi-valued world, the unaudited cone laws agree with every surviving product and disagree freely where the conflicting ones were dropped. Since a name must satisfy every law, their intersection excludes the <em>true</em> answer, and the lane returns nothing on 78% of held-out chains. That is the counterexample to "more laws can only narrow, so more is always safe": narrowing can exclude the truth as easily as a falsehood. The audit refutes laws the data contradicts; the margin covers a law the data is silent about. Neither subsumes the other, and both are tested.</p>
+
+  <h2 id="inlaw">A worked investigation: the in-law gap</h2>
+  <p>One open problem was followed from first observation to resolution, and my own conclusions about it were wrong twice. It is the clearest example of the process.</p>
+  <ol class="steps-v">
+    <li><strong>Observation.</strong> CLUTRR never uses an in-law word inside a chain. All four appear only as answers, so nothing in the corpus shows how an in-law relation composes, and whatever the derivation does with one is invented. On a family tree, the invention is wrong.</li>
+    <li><strong>First hypothesis: a data gap.</strong> Walk a tree with marriages, where 70 of 182 observed products have an in-law word as an operand. <em>Confirmed:</em> soundness returns to 100% at every length.</li>
+    <li><strong>Second hypothesis: a structural limit.</strong> Precision did not return. At length five only 54.3% of answers were right, and only 24.6% of in-law answers. <code>father</code> and <code>father-in-law</code> share an address, and in-law-ness looked like a property of the <em>path</em> (did it cross a marriage, and was that crossing later absorbed?) rather than of the endpoints, which is all any family on the menu can express. I wrote that up as a structural limit.</li>
+    <li><strong>Test one: is the decay real?</strong> Those numbers came from training on products alone. Trained on walks of length two and three, as CLUTRR itself trains, the preference gets in-law answers 100% right at lengths three and five. <em>Most of the decay was a training artifact.</em> What stayed open was knowledge: the laws alone pinned one name on only 9–35% of chains.</li>
+    <li><strong>Test two: build the missing kind of law.</strong> If in-law-ness is path state, the model needs a family that carries state. Route memory derives the smallest automaton consistent with every training chain, audited like the other families. It found real structure: on this tree its two states split the vocabulary exactly at "-in-law", a string the code never reads. But it helped far less than predicted, raising single-name answers from 9% to 24% at length two and from 13% to 19% at length three. A more expressive variant overfit and fell to 65% sound; given longer training chains, the audit retired it. On CLUTRR the audit retires route memory entirely, on 52 contradicting chains.</li>
+    <li><strong>Test three: a different explanation.</strong> English uses one word for two relations. <em>Brother-in-law</em> is both a sister's husband and a spouse's brother, and one word at two addresses collapses the class lane for every in-law term. Word senses let a word that appears only as an answer split into the fewest senses its products require. On the tree it split six in-law words into exactly English's two meanings, found from data alone, and single-name answers went to 100%, still 100% sound, across nine pairs of training and test trees. On CLUTRR nothing splits, and every number is unchanged.</li>
+  </ol>
+  <figure class="fig wide">
+  <div class="frame">
+  <svg viewBox="0 0 620 262" role="img" aria-label="Share of in-law-tree chains the laws pin to a single name. At two steps: 9 percent with the laws alone, 24 with route memory, 100 with word senses. At three steps: 13, 19 and 100.">
+    <line x1="210.0" y1="22" x2="210.0" y2="236" class="sv-grid"/>
+    <text x="210.0" y="252" text-anchor="middle" font-size="11" class="sv-muted">0%</text>
+    <line x1="385.0" y1="22" x2="385.0" y2="236" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="385.0" y="252" text-anchor="middle" font-size="11" class="sv-muted">50%</text>
+    <line x1="560.0" y1="22" x2="560.0" y2="236" class="sv-grid" stroke-dasharray="2 4"/>
+    <text x="560.0" y="252" text-anchor="middle" font-size="11" class="sv-muted">100%</text>
+    <text x="16" y="72" font-size="12" font-weight="600" class="sv-ink">2 steps</text>
+    <text x="200" y="44" text-anchor="end" font-size="11" class="sv-muted">laws alone</text>
+    <rect x="210" y="33" width="31.5" height="16" rx="3" class="sv-mfill"><title>2 steps, laws alone: 9% of chains pinned to one name</title></rect>
+    <text x="249.5" y="45" font-size="11.5" class="sv-ink">9%</text>
+    <text x="200" y="70" text-anchor="end" font-size="11" class="sv-muted">+ route memory</text>
+    <rect x="210" y="59" width="84.0" height="16" rx="3" class="sv-wfill"><title>2 steps, + route memory: 24% of chains pinned to one name</title></rect>
+    <text x="302.0" y="71" font-size="11.5" class="sv-ink">24%</text>
+    <text x="200" y="96" text-anchor="end" font-size="11" class="sv-muted">+ word senses</text>
+    <rect x="210" y="85" width="350.0" height="16" rx="3" class="sv-afill"><title>2 steps, + word senses: 100% of chains pinned to one name</title></rect>
+    <text x="568.0" y="97" font-size="11.5" class="sv-ink">100%</text>
+    <text x="16" y="172" font-size="12" font-weight="600" class="sv-ink">3 steps</text>
+    <text x="200" y="144" text-anchor="end" font-size="11" class="sv-muted">laws alone</text>
+    <rect x="210" y="133" width="45.5" height="16" rx="3" class="sv-mfill"><title>3 steps, laws alone: 13% of chains pinned to one name</title></rect>
+    <text x="263.5" y="145" font-size="11.5" class="sv-ink">13%</text>
+    <text x="200" y="170" text-anchor="end" font-size="11" class="sv-muted">+ route memory</text>
+    <rect x="210" y="159" width="66.5" height="16" rx="3" class="sv-wfill"><title>3 steps, + route memory: 19% of chains pinned to one name</title></rect>
+    <text x="284.5" y="171" font-size="11.5" class="sv-ink">19%</text>
+    <text x="200" y="196" text-anchor="end" font-size="11" class="sv-muted">+ word senses</text>
+    <rect x="210" y="185" width="350.0" height="16" rx="3" class="sv-afill"><title>3 steps, + word senses: 100% of chains pinned to one name</title></rect>
+    <text x="568.0" y="197" font-size="11.5" class="sv-ink">100%</text>
+  </svg>
+  </div>
+  <figcaption><strong>The predicted fix helped a little; the unexpected one closed the gap.</strong> Share of chains on a family tree with marriages that the laws alone pin to one name, all at 100% soundness. Route memory was built because the gap looked like path state. Word senses showed it was mostly polysemy.</figcaption>
+</figure>
+  <p>The gap turned out to be mostly two words hiding in one, not a missing kind of law. The "structural limit" was retracted and the record says so (correction 8). The same senses mechanism, tested on English-style cousin names where "first cousin once removed" means both a parent's cousin and a cousin's child, took single-name answers from 0% to 100% at every length from 2 to 10. Two caveats remain. Tree walks never revisit anyone, so every answer there is fully determined; on CLUTRR, where some chains genuinely have two answers, senses rightly split nothing. And a word that is ambiguous <em>and</em> used inside chains is not yet handled.</p>
+
+  <h2 id="context">Placing the work</h2>
+  <p>After the model worked, I went looking for what it already was. The honest answer is: mostly things with names in other fields. That search changed the claims more than any experiment did, and it is recorded here in full.</p>
+
+  <h3>The method: static analysis, not verification</h3>
+  <p>The first framing called this verification. It isn't. Verification checks a given system against a given specification; this infers a specification from observed behaviour, which is the static-analysis tradition. Every write-up now names that lineage.</p>
+  <ul>
+    <li><strong>Abstract interpretation</strong> (<a href="https://doi.org/10.1145/512950.512973">Cousot &amp; Cousot, 1977</a>) is the closest correspondence. Each family is a sound over-approximation, and the families resemble standard abstract domains: the additive family is a linear-equality domain, and <code>ℤ/5</code>'s refusal is the known blind spot of a rational domain to congruences. The asymmetry this work leans on (a refusal proves something, an admission does not) is the ordinary soundness argument of static analysis.</li>
+    <li><strong>A precision a reviewer would check.</strong> Intersecting independent lanes is the <em>direct</em> product of domains. A <em>reduced</em> product exchanges information between components to sharpen each (<a href="https://doi.org/10.1007/978-3-642-19805-2_31">Cousot, Cousot &amp; Mauborgne, 2011</a>). This model does that only at derivation time, where the cone search consumes the additive kernel, and not at answering time. Claiming the reduced product would be wrong.</li>
+    <li><strong>The audit is specification mining.</strong> Daikon (<a href="https://doi.org/10.1145/302405.302467">Ernst et al., 1999</a>) proposes candidate invariants and keeps those no execution contradicts. That is this audit exactly, including its status: likely invariants, not proved ones. The false <code>husband</code> law is the standard failure of the whole approach.</li>
+    <li><strong>Deriving the domain rather than designing it</strong> is the least standard part, and it is not new either. ATLAS learns abstract domains for program synthesis (<a href="https://doi.org/10.1007/978-3-319-96145-3_22">Wang, Anderson, Dillig &amp; McMillan, 2018</a>).</li>
+  </ul>
+
+  <h3>A result that turned out to be known</h3>
+  <p>Proposition 4 was going to be the basis of a short note arguing that group-shaped knowledge-graph embeddings can't represent transitive relations. The prior-art search killed the note. Knowledgebra (<a href="https://arxiv.org/abs/2204.07328">Yang et al., 2022</a>) makes exactly that argument, that relation composition is a semigroup rather than a group, and proposes a semigroup embedding on that basis. Rot-Pro (<a href="https://arxiv.org/abs/2110.14450">Song, Luo &amp; Huang, 2021</a>) had hit the same wall in practice and fixed transitivity with an idempotent projection. What remains of Proposition 4 is a two-line argument and a criterion checkable against observed products. The white paper was updated to say so before anything was published.</p>
+
+  <h3>The algebra: prior art as ground truth</h3>
+  <p>The bicyclic monoid was first described by Lyapin (1953) and is textbook material (Clifford &amp; Preston, 1961). The algebraic study of kinship goes back to Weil's 1949 appendix for Lévi-Strauss. The closest match is Dwight Read's algebra of American kinship terms (<a href="https://doi.org/10.1086/203160">Read, 1984</a>), built by hand, which defines a kin-term product with a marker for products that have no term. Its generating equations include <em>parent of child = self</em> and <em>child of parent = sibling</em>, as quoted in <a href="https://doi.org/10.1177/0894439312455914">Read, Fischer &amp; Leaf (2013)</a>. The first is the bicyclic relation <code>qp = 1</code>; the second is the order that does not cancel.</p>
+  <p>That makes Read's algebra a ground truth, and a better outcome than novelty would have been. A method that recovers, from 62 products over opaque symbols, a structure a field established by hand has found something real, and the prior art is what it can be checked against. An earlier draft said the kinship literature calls this structure a "bicyclic semigroup". No source for that could be found, so the sentence was replaced with Read's own equations (correction 6).</p>
+
+  <h3>The comparison: reading the baselines' input format</h3>
+  <p>An early draft said comparing with published systems was meaningless, because they must find the reasoning path in a graph while this model is handed a chain. Reading the papers corrected that. The Edge Transformer paper (<a href="https://arxiv.org/abs/2112.00578">Bergen, O'Donnell &amp; Bahdanau, 2021</a>) specifies "the noiseless (only the required facts are included) graph-based version", and R5 likewise consumes symbolic triples. With only the required facts present, the graph <em>is</em> the chain. The second extrapolation split was added because NCRL and EpiGNN report on it, which let the comparison use the protocol the most recent systems publish. The data-release difference (original versus HuggingFace) was found the same way, and is stated wherever the comparison appears.</p>
+  <p>Every citation in both write-ups was checked against Crossref or arXiv before publication. Where a claim could not be sourced, it was removed rather than softened.</p>
+
+  <h2 id="novelty">What is new, and what isn't</h2>
+  <p>Each claim this work could make is set against the closest prior work I found, with a status. "New" means only that I have not found it; it is the claim most likely to be wrong, and corrections are welcome.</p>
+  <div class="table"><table class="wrap-cells">
+    <thead><tr><th>Claim</th><th>Closest prior work</th><th>What differs</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>The kinship algebra is <strong>derived</strong> from observed products over opaque symbols, with no domain knowledge</td><td>Read (1984) built it by hand. KAES (<a href="https://escholarship.org/uc/item/43f9d51h">Read &amp; Behrens, 1990</a>) builds such algebras interactively, with the analyst choosing the generators and equations. Yang, Ishay &amp; Lee (2023) write the family rules as a logic program. Hinton's family-trees network (1986) and linear relational embedding (<a href="https://doi.org/10.1109/69.917563">Paccanaro &amp; Hinton, 2001</a>) learn kinship from triples, as does FOIL's rule learning (<a href="https://doi.org/10.1007/BF00117105">Quinlan, 1990</a>)</td><td>Nothing is supplied: no generators, no equations, no meanings. The result is exact, and it is the same algebra the hand-built work arrived at</td><td><span class="tag kept">new, as far as I found</span></td></tr>
+      <tr><td>Rules that are <strong>neither trained nor written by hand</strong> reach the level of the best published CLUTRR extrapolation results</td><td>R5, NCRL and EpiGNN learn their rules; Yang et al. are given theirs</td><td>Neither training nor supplied rules. The level is the same as the best systems, not higher</td><td><span class="tag kept">new result, as far as I found</span></td></tr>
+      <tr><td>The model is the <strong>complete set of consistent laws</strong>, and a name is admitted only where they all agree</td><td>Version spaces (<a href="https://doi.org/10.1016/0004-3702(82)90040-6">Mitchell, 1982</a>) keep every hypothesis consistent with the data and classify only when all agree. Abstract interpretation intersects sound approximations</td><td>The hypothesis spaces are algebraic shapes solved in closed form (a null space, the bicyclic monoid, union-find), so the complete set is computed rather than bounded</td><td><span class="tag moved">known idea, new instance</span></td></tr>
+      <tr><td><strong>Sound, set-valued answers</strong>, reported with set size as the headline</td><td>Conformal prediction (<a href="https://doi.org/10.1007/978-3-031-06649-8">Vovk, Gammerman &amp; Shafer</a>) returns sets with a statistical coverage guarantee. Static analysers report soundness routinely</td><td>The guarantee here is conditional on the laws being valid, not on exchangeable data. None of the CLUTRR systems I found reports soundness or set size</td><td><span class="tag moved">new to this benchmark, not a new idea</span></td></tr>
+      <tr><td>Deriving the laws <strong>audits the benchmark</strong>: its ceiling, and a law its coverage cannot falsify</td><td>Yang et al. found 16 faulty instances in CLUTRR 1.3 by hand, one of them labelled <em>mother</em> where <em>mother-in-law</em> was right. Path-of-Thoughts (<a href="https://arxiv.org/abs/2412.17963">Zhang et al., 2024</a>) notes questions with several correct answers and one label</td><td>Here the ambiguity is derived rather than found by inspection, measured exactly on all six datasets as a ceiling, and shown to be always a blood/in-law pair. The <code>husband</code> coverage artifact is, as far as I found, not reported elsewhere</td><td><span class="tag moved">partly known</span></td></tr>
+      <tr><td>Completing a <strong>composition table</strong> from part of it: 62 observed products answer 190 of 400</td><td>Grokking (<a href="https://arxiv.org/abs/2201.02177">Power et al., 2022</a>) learns binary-operation tables from a fraction of their entries. Semi-automatic methods compute composition tables from a known semantics (<a href="https://arxiv.org/abs/1105.4224">Liu &amp; Li, 2011</a>)</td><td>Exact derivation instead of learning. It also fails where grokking succeeds: modular addition is outside the menu</td><td><span class="tag moved">known problem, different method</span></td></tr>
+      <tr><td>No invertible representation can express a transitive relation (Proposition 4)</td><td>Knowledgebra (Yang et al., 2022); Rot-Pro (Song, Luo &amp; Huang, 2021)</td><td>Only that it is checked against observed products</td><td><span class="tag gone">known</span></td></tr>
+      <tr><td>Route memory and word senses</td><td>Automaton inference (Gold, 1978; Angluin, 1987); splitting states until a partition is consistent is the Myhill–Nerode construction</td><td>Used as audited lanes that must derive nothing on worlds without the structure</td><td><span class="tag gone">known techniques, applied</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>Taken together, the contribution is an <strong>assembly, plus one result</strong>. The assembly: standard algebraic structures, each solved exactly so that the model is the complete set of consistent laws; a strict separation between what those laws admit and what the evidence prefers; and soundness and set size reported where the literature reports only accuracy. A reader who concludes this is a version space over algebraic hypotheses, read as direct-product abstract interpretation with a mined specification, is close enough to right that it should be the starting point rather than something to argue with. The result: that assembly, given nothing but 62 products over symbols it cannot read, recovers the kinship algebra anthropology built by hand and matches trained systems on the benchmark built to test extrapolation. What is not claimed: any new mathematics, any advantage over the best systems beyond their error bars, or generality beyond the worlds tested.</p>
+
+  <h2 id="corrections">Corrections, and what caught each</h2>
+  <p>Eleven claims were withdrawn or corrected. They are listed because <em>how</em> each was caught is the best evidence of how the work was checked.</p>
+  <div class="table"><table class="wrap-cells">
+    <thead><tr><th>#</th><th>What was claimed</th><th>What caught it</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>A gender result</td><td>Reviewing where the pairing came from: word pairs listed male-first</td><td>Withdrawn; gender is whatever the class lane derives</td></tr>
+      <tr><td>2</td><td>Comparing with published systems is meaningless</td><td>Reading the baselines' input specification</td><td>Same symbolic input; the comparison stands, "same level"</td></tr>
+      <tr><td>3</td><td>The data leaves "a family of four" coordinate systems</td><td>Reading the search: four was a truncation constant</td><td>Depth read from data; one at the least depth</td></tr>
+      <tr><td>4</td><td>Proposition 4 as a new result</td><td>Prior-art search (Knowledgebra, Rot-Pro)</td><td>Credited as known</td></tr>
+      <tr><td>5</td><td>The method framed as verification</td><td>Prior-art search</td><td>Named as static analysis</td></tr>
+      <tr><td>6</td><td>Kinship literature calls it a "bicyclic semigroup"</td><td>Citation check found no source</td><td>Replaced with Read's equations</td></tr>
+      <tr><td>7</td><td>Published in-law numbers</td><td>Re-running under eight hash seeds</td><td>Tie-break fixed; numbers deterministic</td></tr>
+      <tr><td>8</td><td>The in-law gap is a structural limit</td><td>The experiments in <a href="#inlaw">section 12</a></td><td>Narrowed twice; mostly polysemy</td></tr>
+      <tr><td>9</td><td>Under label noise, soundness "stays at 100% throughout"</td><td>Writing a script for a table that had none</td><td>True only on words that survive; both now reported</td></tr>
+      <tr><td>10</td><td>Evidence-removal, tree-seed and cost tables</td><td>The same: no script reproduced them</td><td>Re-measured by <code>stress</code>; with 15 products, sound 9.8%, not 20.7%</td></tr>
+      <tr><td>11</td><td>Every published CLUTRR system is trained</td><td>Writing the novelty comparison: Yang et al. (2023) are given hand-written rules</td><td>"Learned or written by hand; none derived"</td></tr>
+    </tbody>
+  </table></div>
+  <p>None of these changed a headline number. Several changed what the headline numbers mean, and four (1, 3, 9 and 11) had made the work look stronger than it was.</p>
+
+  <h2 id="threats">Threats to validity</h2>
+  <ul>
+    <li><strong>The menu is a prior.</strong> The coordinates are derived, but which shapes to search (additive, bicyclic, two kinds of class) is a choice I made. It is a small library of standard structures, and should never be framed as "no priors".</li>
+    <li><strong>Soundness is audited, not proved.</strong> On a real family tree the CLUTRR-derived laws are 79–90% sound. The benchmark can't expose that, because it never generates the chain that breaks the law.</li>
+    <li><strong>It needs enough data to kill false laws.</strong> With a quarter of the products it is confidently wrong, and nothing warns you at the time.</li>
+    <li><strong>Exact derivation is brittle to label noise.</strong> The tolerance repairs it, and trades away the guarantee to do so.</li>
+    <li><strong>The generality evidence is mostly worlds I built.</strong> Paths, grids, family trees and the synthetic algebras were written by someone who knew the menu. That is a real limitation. A benchmark with many worlds built by others is the right next test (<a href="#next">section 17</a>).</li>
+    <li><strong>The comparison uses a different data release.</strong> Same generator, same protocol, different test sets. It supports "the same level", and nothing stronger.</li>
+    <li><strong>The symbols are given.</strong> Someone supplies the vocabulary and the products. Deriving the vocabulary from text or perception is untouched here, and is probably the harder half of the problem.</li>
+    <li><strong>CLUTRR is small.</strong> Twenty words and 62 products. Scaling evidence comes from synthetic worlds of up to 841 symbols, not from a large real vocabulary.</li>
+  </ul>
+
+  <h2 id="next">What would test it further</h2>
+  <p>The explainer lists the open questions. These are the experiments that would most strengthen or weaken the claims on this page, in order of how much they would tell us.</p>
+  <ol>
+    <li><strong>GraphLog</strong> (<a href="https://arxiv.org/abs/2003.06560">Sinha et al., 2020</a>): 57 logical worlds, each with its own rules, built by others. A model that derives its rules should re-derive them per world with no changes. This directly addresses the "worlds I built" threat.</li>
+    <li><strong>Set-valued answers.</strong> Spatial and temporal relation algebras, where the true answer is often "one of these three", and where published rule learners are reported to struggle.</li>
+    <li><strong>Independent replication</strong> on CLUTRR's original data release, so the comparison is on identical test sets.</li>
+    <li><strong>A real, large vocabulary</strong> with naturally occurring composition data, to see whether the audit still retires false laws when coverage is uneven.</li>
+  </ol>
+
+  <h2 id="repro">Reproducing everything</h2>
+<pre><code>pip install -e .
+export CLUTRR_DIR=/path/to/clutrr/gen_train23_test2to10   <span class="cm"># the other datasets alongside it</span>
+python -m bicyclic_kinship.benchmark    <span class="cm"># all six datasets, the ablation</span>
+python -m bicyclic_kinship.noise        <span class="cm"># false and irrelevant input facts</span>
+python -m bicyclic_kinship.worlds       <span class="cm"># family trees, in-laws, depth, paths, grid</span>
+python -m bicyclic_kinship.stress       <span class="cm"># evidence, labels, tree seeds, refusals, cost</span>
+pytest                                  <span class="cm"># 59 tests</span></code></pre>
+  <p>Zero dependencies, pure Python 3.10+. The synthetic algebras come first in the test file on purpose, as the guard that fails if domain knowledge ever leaks into the source. For the plain-language account, start with <a href="clutrr-explained.html"><em>Who Is Your Daughter's Grandfather?</em></a></p>
+
+  <div class="refs">
+    <p><strong>References</strong></p>
+    <p><em>Benchmark and published systems.</em> Sinha, Sodhani, Dong, Pineau &amp; Hamilton (2019), CLUTRR, EMNLP, <a href="https://arxiv.org/abs/1908.06177">arXiv:1908.06177</a>. Minervini et al. (2020), CTP, ICML, <a href="https://arxiv.org/abs/2007.06477">arXiv:2007.06477</a>. Bergen, O'Donnell &amp; Bahdanau (2021), Systematic Generalization with Edge Transformers, NeurIPS, <a href="https://arxiv.org/abs/2112.00578">arXiv:2112.00578</a>. Lu et al. (2022), R5, ICLR, <a href="https://arxiv.org/abs/2205.06454">arXiv:2205.06454</a>. Cheng et al. (2023), NCRL, ICLR, <a href="https://arxiv.org/abs/2303.03581">arXiv:2303.03581</a>. Khalid &amp; Schockaert (2025), Systematic Relational Reasoning with Epistemic Graph Neural Networks, ICLR, <a href="https://proceedings.iclr.cc/paper_files/paper/2025/file/6590cb829f5ffef50050f3e5845fbb4c-Paper-Conference.pdf">proceedings</a>. Sinha, Sodhani, Pineau &amp; Hamilton (2020), GraphLog, <a href="https://arxiv.org/abs/2003.06560">arXiv:2003.06560</a>.</p>
+    <p><em>Kinship algebra.</em> Weil (1949), appendix to Lévi-Strauss, <em>Les structures élémentaires de la parenté</em>. Read (1984), An Algebraic Account of the American Kinship Terminology, <em>Current Anthropology</em> 25(4), <a href="https://doi.org/10.1086/203160">link</a>. Read, Fischer &amp; Leaf (2013), What Are Kinship Terminologies, and Why Do We Care?, <em>Social Science Computer Review</em>, <a href="https://doi.org/10.1177/0894439312455914">doi</a>.</p>
+    <p><em>Mathematics.</em> Lyapin (1953), first published description of the bicyclic semigroup. Clifford &amp; Preston (1961), <em>The Algebraic Theory of Semigroups</em>, vol. 1.</p>
+    <p><em>Program analysis.</em> Cousot &amp; Cousot (1977), Abstract interpretation, POPL, <a href="https://doi.org/10.1145/512950.512973">doi</a>. Ernst, Cockrell, Griswold &amp; Notkin (1999), Dynamically discovering likely program invariants to support program evolution, ICSE, <a href="https://doi.org/10.1145/302405.302467">doi</a>. Cousot, Cousot &amp; Mauborgne (2011), The Reduced Product of Abstract Domains and the Combination of Decision Procedures, FoSSaCS, <a href="https://doi.org/10.1007/978-3-642-19805-2_31">doi</a>. Wang, Anderson, Dillig &amp; McMillan (2018), Learning Abstractions for Program Synthesis, CAV, <a href="https://doi.org/10.1007/978-3-319-96145-3_22">doi</a>.</p>
+    <p><em>Learning relations and rules.</em> Hinton (1986), Learning distributed representations of concepts, <em>Proceedings of the Eighth Annual Conference of the Cognitive Science Society</em>. Quinlan (1990), Learning logical definitions from relations, <em>Machine Learning</em> 5, <a href="https://doi.org/10.1007/BF00117105">doi</a>. Paccanaro &amp; Hinton (2001), Learning distributed representations of concepts using linear relational embedding, <em>IEEE TKDE</em> 13(2), <a href="https://doi.org/10.1109/69.917563">doi</a>. Mitchell (1982), Generalization as search, <em>Artificial Intelligence</em> 18(2), <a href="https://doi.org/10.1016/0004-3702(82)90040-6">doi</a>. Gold (1978), Complexity of automaton identification from given data, <em>Information and Control</em>, <a href="https://doi.org/10.1016/S0019-9958(78)90562-4">doi</a>. Angluin (1987), Learning regular sets from queries and counterexamples, <em>Information and Computation</em>, <a href="https://doi.org/10.1016/0890-5401(87)90052-6">doi</a>. Power, Burda, Edwards, Babuschkin &amp; Misra (2022), Grokking: Generalization Beyond Overfitting on Small Algorithmic Datasets, <a href="https://arxiv.org/abs/2201.02177">arXiv:2201.02177</a>.</p>
+    <p><em>Symbolic systems and benchmark audits.</em> Read &amp; Behrens (1990), KAES: An Expert System for the Algebraic Analysis of Kinship Terminologies, <em>Journal of Quantitative Anthropology</em> 2(4), <a href="https://escholarship.org/uc/item/43f9d51h">link</a>. Yang, Ishay &amp; Lee (2023), Coupling Large Language Models with Logic Programming for Robust and General Reasoning from Text, Findings of ACL, <a href="https://arxiv.org/abs/2307.07696">arXiv:2307.07696</a>. Zhang et al. (2024), Extracting and Following Paths for Robust Relational Reasoning with Large Language Models (Path-of-Thoughts), <em>TMLR</em> 2026, <a href="https://arxiv.org/abs/2412.17963">arXiv:2412.17963</a>. Liu &amp; Li (2011), On a Semi-Automatic Method for Generating Composition Tables, <a href="https://arxiv.org/abs/1105.4224">arXiv:1105.4224</a>. Vovk, Gammerman &amp; Shafer (2005; 2nd ed. 2022), <em>Algorithmic Learning in a Random World</em>, Springer, <a href="https://doi.org/10.1007/978-3-031-06649-8">doi</a>.</p>
+    <p><em>Knowledge-graph embeddings.</em> Song, Luo &amp; Huang (2021), Rot-Pro: Modeling Transitivity by Projection in Knowledge Graph Embedding, NeurIPS, <a href="https://arxiv.org/abs/2110.14450">arXiv:2110.14450</a>. Yang, Wang, Sha, Engelbrecht &amp; Hong (2022), Knowledgebra: An Algebraic Learning Framework for Knowledge Graph, <a href="https://arxiv.org/abs/2204.07328">arXiv:2204.07328</a>.</p>
+  </div>
+</main>

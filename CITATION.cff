@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+type: software
+title: "bicyclic-kinship: kinship reasoning without a neural network"
+abstract: >-
+  A sound, set-valued model of relational composition that derives its rules
+  from composition facts over opaque symbols instead of learning weights. On
+  the CLUTRR benchmark it reaches the level of the best published systems on
+  chains longer than any seen in training, and reports when a question has
+  more than one answer.
+authors:
+  - given-names: Steve
+    family-names: Ball
+version: 0.1.0
+date-released: "2026-09-30"
+license: MIT
+repository-code: "https://github.com/SteveSolvesProblems/bicyclic-kinship"
+url: "https://stevesolvesproblems.github.io/bicyclic-kinship/"
+keywords:
+  - CLUTRR
+  - kinship
+  - relational reasoning
+  - bicyclic monoid
+  - abstract interpretation
+  - symbolic reasoning

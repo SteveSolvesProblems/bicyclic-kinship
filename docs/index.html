@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>bicyclic-kinship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;1,7..72,400&display=swap">
+<style>
+/* One reading column: the two writeups, most accessible first. */
+:root {
+  --paper: #f6f7f4; --ink: #1c2330; --muted: #5b6474; --rule: #d9ddd6;
+  --accent: #1f6a86; --panel: #ffffff; color-scheme: light;
+  --display: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+  --body: "Literata", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #14181e; --ink: #e4e7ea; --muted: #9aa3ae; --rule: #2c333d; --accent: #7cc0da; --panel: #1a1f26; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --paper: #14181e; --ink: #e4e7ea; --muted: #9aa3ae; --rule: #2c333d; --accent: #7cc0da; --panel: #1a1f26; color-scheme: dark; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.6; }
+.wrap { max-width: 44rem; margin: 0 auto; padding-inline: 20px; padding-block: 56px 72px; }
+.eyebrow { font-family: var(--display); font-size: .74rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 .6rem; }
+h1 { font-family: var(--display); font-size: clamp(1.8rem, 5vw, 2.4rem); line-height: 1.2; margin: 0 0 .4rem; text-wrap: balance; }
+.byline { font-family: var(--display); color: var(--muted); margin: 0 0 1.4rem; }
+ul { list-style: none; padding: 0; margin: 1.6rem 0; display: grid; gap: 10px; }
+li { border: 1px solid var(--rule); background: var(--panel); border-radius: 6px; padding: 14px 18px; }
+li a { font-family: var(--display); font-weight: 600; font-size: 1.08rem; color: var(--accent); text-decoration: none; }
+li a:hover, li a:focus-visible { text-decoration: underline; }
+li p { margin: .2rem 0 0; color: var(--muted); font-size: .95rem; }
+.foot { font-family: var(--display); font-size: .88rem; color: var(--muted); }
+.foot a { color: var(--accent); }
+</style>
+
+<main class="wrap">
+  <p class="eyebrow">CLUTRR · kinship reasoning</p>
+  <h1>bicyclic-kinship</h1>
+  <p class="byline">Steve Ball</p>
+  <p>A sound, set-valued model of relational composition that derives its rules from opaque symbols instead of learning weights. On the CLUTRR benchmark it reaches the level of the best published systems, and it says when a question has more than one answer.</p>
+  <ul>
+    <li><a href="clutrr-explained.html">Who Is Your Daughter's Grandfather?</a>
+      <p>Start here. A plain-language explainer: the model, all six CLUTRR datasets, depth to 10,000 steps, related work and open questions.</p></li>
+    <li><a href="method-and-evidence.html">Deriving Composition Laws, and Trying to Break Them</a>
+      <p>The technical companion: the mathematics, every measurement, the stress tests, the corrections, and how the work was checked against the literature.</p></li>
+  </ul>
+  <p class="foot">Code, tests and data instructions: <a href="https://github.com/SteveSolvesProblems/bicyclic-kinship">github.com/SteveSolvesProblems/bicyclic-kinship</a></p>
+</main>
